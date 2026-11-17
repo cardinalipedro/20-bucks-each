@@ -18,6 +18,14 @@ const pt = {
     language: 'Idioma',
     switchToLight: 'Mudar para o tema claro',
     switchToDark: 'Mudar para o tema escuro',
+    backToMenu: 'Voltar ao menu',
+  },
+  exit: {
+    leave: 'Sair da partida',
+    title: 'Sair da partida?',
+    body: 'O progresso desta partida vai ser perdido.',
+    confirm: 'Sair',
+    cancel: 'Continuar jogando',
   },
   setup: {
     titleLine1: 'Cada um com $20.',
@@ -154,6 +162,14 @@ const en: Messages = {
     language: 'Language',
     switchToLight: 'Switch to light theme',
     switchToDark: 'Switch to dark theme',
+    backToMenu: 'Back to menu',
+  },
+  exit: {
+    leave: 'Leave game',
+    title: 'Leave this game?',
+    body: 'Your progress in this game will be lost.',
+    confirm: 'Leave',
+    cancel: 'Keep playing',
   },
   setup: {
     titleLine1: '$20 each.',
@@ -287,6 +303,14 @@ const es: Messages = {
     language: 'Idioma',
     switchToLight: 'Cambiar al tema claro',
     switchToDark: 'Cambiar al tema oscuro',
+    backToMenu: 'Volver al menú',
+  },
+  exit: {
+    leave: 'Salir de la partida',
+    title: '¿Salir de la partida?',
+    body: 'Se perderá el progreso de esta partida.',
+    confirm: 'Salir',
+    cancel: 'Seguir jugando',
   },
   setup: {
     titleLine1: '$20 para cada uno.',

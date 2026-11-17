@@ -6,6 +6,7 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { simulateTournament } from '@/lib/sim/tournament';
 import type { Tournament } from '@/lib/sim/types';
 import { AuctionScreen } from './AuctionScreen';
+import { ExitGameProvider } from './ExitGame';
 import { ResultsScreen } from './ResultsScreen';
 import { SetupScreen } from './SetupScreen';
 import { TournamentScreen } from './tournament/TournamentScreen';
@@ -26,7 +27,12 @@ export function Game() {
     );
   }
 
-  return <LocalGame key={gameId} config={config} onRestart={() => setConfig(null)} />;
+  const backToMenu = () => setConfig(null);
+  return (
+    <ExitGameProvider key={gameId} onExit={backToMenu}>
+      <LocalGame config={config} onRestart={backToMenu} />
+    </ExitGameProvider>
+  );
 }
 
 function LocalGame({ config, onRestart }: { config: GameConfig; onRestart: () => void }) {
@@ -56,7 +62,6 @@ function LocalGame({ config, onRestart }: { config: GameConfig; onRestart: () =>
     <ResultsScreen
       state={state}
       humanId={HUMAN_COACH_ID}
-      onRestart={onRestart}
       onContinue={startTournament}
       continueLabel={config.tournament.format === 'playoffsOnly' ? t.results.startPlayoffs : t.results.startSeason}
     />

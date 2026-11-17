@@ -14,6 +14,25 @@
   gap: 12px;
 }
 
+.brandButton {
+  padding: 4px 8px 4px 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.brandButton:hover .logo {
+  color: var(--accent);
+}
+
+.logoText {
+  display: flex;
+  flex-direction: column;
+}
+
 .logo {
   font-size: 26px;
   line-height: 1;
@@ -24,6 +43,7 @@
 }
 
 .subtitle {
+  display: block;
   margin-top: 4px;
   font-size: 13px;
   color: var(--muted);

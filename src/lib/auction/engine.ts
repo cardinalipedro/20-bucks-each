@@ -69,6 +69,27 @@ export function passLot(state: AuctionState, coachId: string, now: number): Auct
   return next === state ? state : withSeed(next, rng);
 }
 
+/**
+ * A human left the match: a bot takes over their team, cash and current lot.
+ * Their roster and money are kept, so the room keeps the same number of teams.
+ */
+export function replaceWithBot(state: AuctionState, coachId: string, now: number): AuctionState {
+  const coach = state.coaches.find((c) => c.id === coachId);
+  if (!coach || coach.isBot) return state;
+
+  const rng = createRng(state.rngSeed);
+  const coaches = state.coaches.map((c) =>
+    c.id === coachId ? { ...c, isBot: true, replacedByBot: true, aggressiveness: 1 } : c,
+  );
+  const next: AuctionState = { ...state, coaches };
+  if (next.phase !== 'running' || !next.lot) return next;
+
+  const lot = next.lot;
+  const isTop = topBid(lot)?.coachId === coachId;
+  const plan = lot.passed.includes(coachId) || isTop ? Infinity : now + botReactionDelay(lot.deadline - now, rng);
+  return withSeed({ ...next, botPlans: { ...next.botPlans, [coachId]: plan } }, rng);
+}
+
 /** Advance the clock: lets bots act and closes the lot when time runs out. */
 export function tick(state: AuctionState, now: number): AuctionState {
   if (state.phase !== 'running' || !state.lot) return state;

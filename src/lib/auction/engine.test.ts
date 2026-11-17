@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { PLAYERS } from '../../data/players';
-import { createAuction, passLot, placeBid, tick } from './engine';
+import { createAuction, passLot, placeBid, replaceWithBot, tick } from './engine';
 import { POOL_FACTOR } from './pool';
 import { maxBid, minNextBid } from './rules';
 import type { AuctionSettings, AuctionState } from './types';
@@ -128,6 +128,27 @@ describe('auction engine', () => {
 
     const late = placeBid(early, b.id, 2, 8_500);
     assert.equal(late.lot!.deadline, 11_500);
+  });
+
+  it('a bot takes over the team of a human who leaves', () => {
+    let state = newGame(4, SETTINGS, 2);
+    state = placeBid(state, 'coach-1', 3, 1);
+    state = replaceWithBot(state, 'coach-1', 2);
+    const replaced = state.coaches.find((c) => c.id === 'coach-1')!;
+    assert.ok(replaced.isBot && replaced.replacedByBot);
+    assert.equal(replaced.name, 'C1');
+    assert.equal(state.lot!.bids.at(-1)?.coachId, 'coach-1', 'their winning bid still counts');
+
+    // The human that stays never bids; the match still finishes with full rosters.
+    let now = 2;
+    while (state.phase === 'running') {
+      now += 250;
+      state = passLot(state, 'coach-0', now);
+      state = tick(state, now);
+    }
+    const bot = state.coaches.find((c) => c.id === 'coach-1')!;
+    assert.ok(bot.roster.every((slot) => slot.playerId));
+    assert.ok(SETTINGS.startingCash - bot.cash >= 3, 'the replacement bot kept playing');
   });
 
   it('is deterministic for the same seed', () => {

@@ -6,6 +6,7 @@ import type { AuctionState } from '@/lib/auction/types';
 import { coachLabel } from '@/lib/format';
 import { standingsAfter } from '@/lib/sim/tournament';
 import type { GameResult, Tournament } from '@/lib/sim/types';
+import { ExitGameButton } from '../ExitGame';
 import { Header } from '../Header';
 import { Awards } from './Awards';
 import { Bracket } from './Bracket';
@@ -106,9 +107,13 @@ export function TournamentScreen({ tournament, auction, humanId, onRestart }: To
   return (
     <div className="container">
       <Header subtitle={subtitle}>
-        <button type="button" className="btn" onClick={onRestart}>
-          {t.results.playAgain}
-        </button>
+        {finished ? (
+          <button type="button" className="btn btn-primary" onClick={onRestart}>
+            {t.results.playAgain}
+          </button>
+        ) : (
+          <ExitGameButton />
+        )}
       </Header>
 
       <div className={styles.toolbar}>

@@ -5,18 +5,18 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { amountSpent, bestGm as pickBestGm, biggestBuy as pickBiggestBuy, rankByRating } from '@/lib/awards';
 import { coachLabel, formatMoney, slotLabel } from '@/lib/format';
 import { teamRating } from '@/lib/sim/strength';
+import { ExitGameButton } from './ExitGame';
 import { Header } from './Header';
 import styles from './ResultsScreen.module.css';
 
 interface ResultsScreenProps {
   state: AuctionState;
   humanId: string;
-  onRestart: () => void;
   onContinue: () => void;
   continueLabel: string;
 }
 
-export function ResultsScreen({ state, humanId, onRestart, onContinue, continueLabel }: ResultsScreenProps) {
+export function ResultsScreen({ state, humanId, onContinue, continueLabel }: ResultsScreenProps) {
   const { t } = useI18n();
   const { startingCash } = state.settings;
   const ranked = rankByRating(state);
@@ -32,9 +32,7 @@ export function ResultsScreen({ state, humanId, onRestart, onContinue, continueL
   return (
     <div className="container">
       <Header subtitle={t.results.subtitle}>
-        <button type="button" className="btn" onClick={onRestart}>
-          {t.results.playAgain}
-        </button>
+        <ExitGameButton />
       </Header>
 
       <h1 className={`display ${styles.title}`}>{t.results.title}</h1>

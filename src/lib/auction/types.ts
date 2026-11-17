@@ -36,6 +36,8 @@ export interface Coach {
   roster: RosterSlot[];
   /** Bots only: multiplies how much they are willing to pay (1 = neutral). */
   aggressiveness: number;
+  /** A human who left the match and is now played by a bot. */
+  replacedByBot?: boolean;
 }
 
 export interface AuctionSettings {

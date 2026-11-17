@@ -5,6 +5,7 @@ import type { AuctionState, Coach } from '@/lib/auction/types';
 import { useI18n } from '@/i18n/I18nProvider';
 import type { Messages } from '@/i18n/messages';
 import { coachLabel, formatMoney, playerInitials, slotLabel } from '@/lib/format';
+import { ExitGameButton } from './ExitGame';
 import { Header } from './Header';
 import styles from './AuctionScreen.module.css';
 
@@ -60,6 +61,7 @@ export function AuctionScreen({ state, now, humanId, onBid, onPass }: AuctionScr
           <span className="muted">{t.auction.balance}</span>
           <span className={`display ${styles.balanceValue}`}>{formatMoney(me.cash)}</span>
         </div>
+        <ExitGameButton />
       </Header>
 
       {lastResult && (
