@@ -4,28 +4,6 @@ Leilão de jogadores da NBA: cada técnico tem $20 pra montar o quinteto mais fo
 
 **Versão atual:** salas multiplayer (públicas e privadas) ou treino contra bots, leilão ao vivo e campeonato simulado (temporada regular, playoffs e prêmios).
 
-## Como rodar
-
-Precisa do Node.js 20.9 ou mais novo.
-
-```bash
-npm install
-npm run dev
-```
-
-O `npm run dev` sobe **duas coisas juntas**: o site (http://localhost:3000) e o servidor das salas (porta 3001).
-Pra testar o multiplayer no seu PC, abra o site em duas janelas diferentes (uma normal e uma anônima), crie a sala numa e entre pela outra.
-
-Se quiser rodar separado: `npm run dev:web` (só o site) e `npm run dev:server` (só o servidor).
-
-Outros comandos:
-
-| Comando | O que faz |
-| --- | --- |
-| `npm test` | Roda os testes do motor do leilão |
-| `npm run typecheck` | Checa os tipos do TypeScript |
-| `npm run build` | Gera a versão de produção do site |
-| `npm run start:server` | Roda o servidor das salas em produção |
 
 ## Estrutura
 
