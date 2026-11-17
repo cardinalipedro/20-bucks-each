@@ -1,6 +1,16 @@
 import { botReactionDelay, decideBot } from './bots';
-import { createRng, shuffle, type Rng } from './rng';
-import { canBidOn, createRoster, findSlotFor, isRosterFull, maxBid, minNextBid, topBid } from './rules';
+import { buildPool } from './pool';
+import { createRng, type Rng } from './rng';
+import {
+  BID_EXTENSION_SECONDS,
+  canBidOn,
+  createRoster,
+  findSlotFor,
+  isRosterFull,
+  maxBid,
+  minNextBid,
+  topBid,
+} from './rules';
 import type { AuctionSettings, AuctionState, Coach, Lot, Player } from './types';
 
 export interface CoachSeed {
@@ -35,10 +45,7 @@ export function createAuction({ settings, players, coaches, seed, now }: CreateA
       roster: createRoster(settings),
       aggressiveness: coach.isBot ? rng.between(0.85, 1.25) : 1,
     })),
-    queue: shuffle(
-      players.map((player) => player.id),
-      rng,
-    ),
+    queue: buildPool(players, coaches.length, settings, rng),
     lot: null,
     unsold: [],
     history: [],
@@ -117,10 +124,11 @@ function applyBid(state: AuctionState, coachId: string, amount: number, now: num
   if (!isValid) return state;
 
   const bids = [...lot.bids, { coachId, amount, at: now }];
+  // The clock never goes back to full time: a late bid only buys a few seconds.
   const updatedLot: Lot = {
     ...lot,
     bids,
-    deadline: now + state.settings.bidSeconds * 1000,
+    deadline: Math.max(lot.deadline, now + BID_EXTENSION_SECONDS * 1000),
   };
   // Anyone who can no longer afford the next bid is out automatically.
   updatedLot.passed = state.coaches
@@ -158,7 +166,7 @@ function planBots(state: AuctionState, now: number, rng: Rng): Record<string, nu
   for (const coach of state.coaches) {
     if (!coach.isBot) continue;
     const waiting = !lot || lot.passed.includes(coach.id) || coach.id === topCoachId;
-    plans[coach.id] = waiting ? Infinity : now + botReactionDelay(state.settings.bidSeconds, rng);
+    plans[coach.id] = waiting || !lot ? Infinity : now + botReactionDelay(lot.deadline - now, rng);
   }
   return plans;
 }
@@ -230,11 +238,14 @@ function openNextLot(state: AuctionState, now: number, rng: Rng): AuctionState {
   return finish({ ...state, queue, unsold });
 }
 
-/** Ends the auction, giving any remaining empty slot the best free agent for $0. */
+/**
+ * Ends the auction. Any slot still open gets the WORST leftover player for $0,
+ * so passing on everyone while waiting for a star does not pay off.
+ */
 function finish(state: AuctionState): AuctionState {
   const pool = [...state.queue, ...state.unsold]
     .map((id) => state.players[id])
-    .sort((a, b) => b.overall - a.overall);
+    .sort((a, b) => a.overall - b.overall);
 
   const coaches = state.coaches.map((original) => {
     let coach = original;

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { PLAYERS } from '../../data/players';
 import { createAuction, passLot, placeBid, tick } from './engine';
+import { POOL_FACTOR } from './pool';
 import { maxBid, minNextBid } from './rules';
 import type { AuctionSettings, AuctionState } from './types';
 
@@ -84,6 +85,49 @@ describe('auction engine', () => {
     assert.ok(winner.roster.some((slot) => slot.playerId === playerId && slot.price === 3));
     assert.equal(winner.cash, 17);
     assert.equal(afterPass.lotNumber, 2);
+  });
+
+  it('auctions a limited pool with every position covered', () => {
+    for (const coachCount of [2, 8, 16]) {
+      const state = newGame(coachCount);
+      const pool = [state.lot!.playerId, ...state.queue];
+      const expected = Math.min(PLAYERS.length, Math.ceil(5 * coachCount * POOL_FACTOR));
+      assert.ok(pool.length >= expected && pool.length <= expected + 5, `pool ${pool.length} vs ${expected}`);
+      for (const position of ['PG', 'SG', 'SF', 'PF', 'C'] as const) {
+        const count = pool.filter((id) => state.players[id].positions.includes(position)).length;
+        assert.ok(count >= coachCount, `${position}: ${count} < ${coachCount}`);
+      }
+    }
+  });
+
+  it('gives the worst leftover players to a coach who passes on everything', () => {
+    let state = newGame(4, SETTINGS, 1, 11);
+    let now = 0;
+    while (state.phase === 'running') {
+      now += 250;
+      state = passLot(state, 'coach-0', now);
+      state = tick(state, now);
+    }
+    const human = state.coaches[0];
+    const leftovers = state.unsold.map((id) => state.players[id].overall);
+    assert.equal(human.cash, SETTINGS.startingCash);
+    for (const slot of human.roster) {
+      assert.equal(slot.price, 0);
+      const overall = state.players[slot.playerId!].overall;
+      assert.ok(leftovers.every((left) => left >= overall - 3), 'human got a better player than what was left');
+    }
+  });
+
+  it('never resets the clock, a late bid only extends it to 3 seconds', () => {
+    const state = newGame(2, SETTINGS, 2);
+    const [a, b] = state.coaches;
+    assert.equal(state.lot!.deadline, 10_000);
+
+    const early = placeBid(state, a.id, 1, 1_000);
+    assert.equal(early.lot!.deadline, 10_000);
+
+    const late = placeBid(early, b.id, 2, 8_500);
+    assert.equal(late.lot!.deadline, 11_500);
   });
 
   it('is deterministic for the same seed', () => {

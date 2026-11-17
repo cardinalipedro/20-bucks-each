@@ -1,4 +1,5 @@
 import { DeerMascot } from './DeerMascot';
+import { Preferences } from './Preferences';
 import styles from './Header.module.css';
 
 interface HeaderProps {
@@ -18,7 +19,10 @@ export function Header({ subtitle, children }: HeaderProps) {
           {subtitle && <div className={styles.subtitle}>{subtitle}</div>}
         </div>
       </div>
-      {children}
+      <div className={styles.actions}>
+        {children}
+        <Preferences />
+      </div>
     </header>
   );
 }

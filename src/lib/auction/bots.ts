@@ -29,7 +29,14 @@ export function botValuation(bot: Coach, player: Player, state: AuctionState): n
   const benchOnly = slotIndex !== -1 && bot.roster[slotIndex].kind === 'BENCH';
   const needFactor = benchOnly ? 0.5 : 1;
 
-  const value = basePrice(player.overall) * scale * bot.aggressiveness * budgetFactor * needFactor;
+  // When players are running out, filling the roster gets urgent.
+  const remainingPlayers = state.queue.length + 1;
+  const openSlots = state.coaches.reduce((sum, coach) => sum + emptySlotCount(coach), 0);
+  const scarcity = remainingPlayers / Math.max(openSlots, 1);
+  const scarcityFactor = Math.min(1.5, Math.max(1, 1.3 / scarcity));
+
+  const value =
+    basePrice(player.overall) * scale * bot.aggressiveness * budgetFactor * needFactor * scarcityFactor;
   return Math.max(1, Math.floor(value));
 }
 
@@ -52,7 +59,8 @@ export function decideBot(bot: Coach, state: AuctionState, rng: Rng): BotDecisio
   return { type: 'bid', amount: next + jump };
 }
 
-/** Delay before a bot reacts, so bids feel human. */
-export function botReactionDelay(bidSeconds: number, rng: Rng): number {
-  return rng.between(700, bidSeconds * 1000 * 0.75);
+/** Delay before a bot reacts, so bids feel human but still land before the clock runs out. */
+export function botReactionDelay(msLeft: number, rng: Rng): number {
+  const earliest = Math.min(600, msLeft * 0.3);
+  return rng.between(earliest, msLeft * 0.85);
 }

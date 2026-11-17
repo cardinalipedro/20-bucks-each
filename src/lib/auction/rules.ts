@@ -2,6 +2,9 @@ import { POSITIONS, type AuctionSettings, type Coach, type Lot, type Player, typ
 
 export const MIN_BID = 1;
 
+/** A bid in the final seconds pushes the clock back up to this many seconds. */
+export const BID_EXTENSION_SECONDS = 3;
+
 export function createRoster(settings: AuctionSettings): RosterSlot[] {
   const starters: RosterSlot[] = POSITIONS.map((kind) => ({ kind, playerId: null, price: 0 }));
   const bench: RosterSlot[] = Array.from({ length: settings.benchSize }, () => ({
