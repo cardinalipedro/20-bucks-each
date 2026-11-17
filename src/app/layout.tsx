@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Anton, Archivo } from 'next/font/google';
 import { I18nProvider } from '@/presentation/i18n/I18nProvider';
 import { THEME_INIT_SCRIPT } from '@/presentation/theme/theme';
@@ -10,6 +10,13 @@ const body = Archivo({ subsets: ['latin'], variable: '--font-body' });
 export const metadata: Metadata = {
   title: '20 Bucks Each — Leilão de jogadores da NBA',
   description: 'Cada um com $20. Dispute jogadores da NBA no leilão e monte o quinteto mais forte.',
+};
+
+/** Colors the mobile browser bar to match the dark theme. */
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#0a120e',
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

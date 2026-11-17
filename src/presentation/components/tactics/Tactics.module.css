@@ -284,3 +284,35 @@
   align-items: flex-start;
   gap: 8px;
 }
+
+@media (max-width: 640px) {
+  .intro {
+    padding-top: 20px;
+  }
+
+  .layout {
+    gap: 16px;
+  }
+
+  .option {
+    min-height: 0;
+    padding: 14px;
+  }
+
+  /* iOS zooms into form fields with text smaller than 16px. */
+  .lineupSelect {
+    font-size: 16px;
+  }
+
+  .summary {
+    gap: 10px;
+  }
+
+  .summaryValue {
+    font-size: 18px;
+  }
+
+  .finalValue {
+    font-size: 32px;
+  }
+}

@@ -24,7 +24,7 @@
 
 .title {
   margin: 0;
-  font-size: clamp(40px, 6vw, 56px);
+  font-size: clamp(32px, 9vw, 56px);
   line-height: 1.02;
 }
 
@@ -85,7 +85,7 @@
 }
 
 .publicSection {
-  margin-top: 40px;
+  margin-top: 16px;
 }
 
 .publicHead {
@@ -192,5 +192,48 @@
 @media (prefers-reduced-motion: reduce) {
   .spinner {
     animation-duration: 2.4s;
+  }
+}
+
+@media (max-width: 640px) {
+  .layout {
+    gap: 24px;
+    padding-top: 24px;
+  }
+
+  .formCard {
+    padding: 20px;
+  }
+
+  .billInner {
+    gap: 10px;
+    padding: 12px 14px;
+  }
+
+  .billValue {
+    font-size: 40px;
+  }
+
+  .billPortrait {
+    width: 76px;
+    height: 76px;
+  }
+
+  .billPortrait svg {
+    width: 60px;
+    height: 60px;
+  }
+
+
+  .codeForm {
+    width: 100%;
+  }
+
+  .codeForm > div {
+    flex: 1 1 auto;
+  }
+
+  .codeInput {
+    width: 100%;
   }
 }

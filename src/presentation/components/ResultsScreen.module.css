@@ -154,3 +154,17 @@
   text-align: right;
   color: var(--text-soft);
 }
+
+@media (max-width: 640px) {
+  .title {
+    margin-top: 20px;
+  }
+
+  .continue {
+    max-width: none;
+  }
+
+  .teams {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

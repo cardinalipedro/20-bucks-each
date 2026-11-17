@@ -36,7 +36,7 @@ export function Standings({ standings, names, ratings, humanId, qualifiers }: St
               <th scope="col" className={styles.num}>
                 {t.tournament.losses}
               </th>
-              <th scope="col" className={styles.num}>
+              <th scope="col" className={`${styles.num} ${styles.optionalColumn}`}>
                 {t.tournament.diff}
               </th>
               <th scope="col" className={styles.num}>
@@ -55,7 +55,7 @@ export function Standings({ standings, names, ratings, humanId, qualifiers }: St
                   <td className={styles.teamCell}>{names[row.coachId]}</td>
                   <td className={`${styles.num} ${styles.strong}`}>{row.wins}</td>
                   <td className={styles.num}>{row.losses}</td>
-                  <td className={styles.num}>{diff > 0 ? `+${diff}` : diff}</td>
+                  <td className={`${styles.num} ${styles.optionalColumn}`}>{diff > 0 ? `+${diff}` : diff}</td>
                   <td className={`${styles.num} ${styles.rating}`}>{ratings[row.coachId].toFixed(1)}</td>
                 </tr>
               );

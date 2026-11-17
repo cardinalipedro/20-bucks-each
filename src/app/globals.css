@@ -65,6 +65,32 @@ select {
   padding: 0 24px 56px;
 }
 
+/*
+ * Breakpoints used across the app (mobile first where it matters):
+ *   ≤ 900px  tablet: columns stack, the auction card comes first
+ *   ≤ 640px  phone: compact header, sticky bid panel, smaller type
+ *   ≤ 380px  small phone: tighter buttons
+ */
+@media (max-width: 640px) {
+  .container {
+    padding: 0 16px 40px;
+  }
+
+  .card {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 380px) {
+  .btn {
+    padding: 0 12px;
+  }
+
+  .btn-big {
+    font-size: 19px;
+  }
+}
+
 .card {
   background: var(--surface);
   border: 1px solid var(--border);

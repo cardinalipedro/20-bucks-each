@@ -55,3 +55,24 @@
   gap: 16px;
   flex-wrap: wrap;
 }
+
+@media (max-width: 640px) {
+  .header {
+    gap: 12px;
+    padding: 14px 0;
+  }
+
+  .brand svg {
+    width: 40px;
+    height: 40px;
+  }
+
+  .logo {
+    font-size: 22px;
+  }
+
+  .actions {
+    gap: 8px;
+    width: 100%;
+  }
+}

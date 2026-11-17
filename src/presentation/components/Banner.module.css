@@ -26,3 +26,12 @@
   font-size: 14px;
   color: var(--text-soft);
 }
+
+/* On phones the bottom of the screen belongs to the bid panel. */
+@media (max-width: 640px) {
+  .banner {
+    top: 12px;
+    bottom: auto;
+    padding: 14px 16px;
+  }
+}

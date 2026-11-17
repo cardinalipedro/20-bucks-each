@@ -400,3 +400,100 @@
     order: -1;
   }
 }
+
+@media (max-width: 640px) {
+  .toast {
+    margin-top: 12px;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  .layout {
+    gap: 16px;
+    padding-top: 12px;
+  }
+
+  .center {
+    gap: 12px;
+  }
+
+  .playerCard {
+    gap: 16px;
+    padding: 18px;
+  }
+
+  .playerHead {
+    gap: 14px;
+    flex-wrap: nowrap;
+  }
+
+  .avatar {
+    width: 64px;
+    height: 64px;
+    flex-basis: 64px;
+    border-radius: 16px;
+    font-size: 24px;
+  }
+
+  .playerInfo {
+    flex: 1 1 auto;
+  }
+
+  .playerName {
+    margin: 2px 0 6px;
+    font-size: 24px;
+  }
+
+  .overallValue {
+    font-size: 40px;
+  }
+
+  .ratings {
+    gap: 10px 16px;
+  }
+
+  /* The bid controls stay on screen while the player card scrolls. */
+  .bidPanel {
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px 14px;
+    padding: 14px;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.35);
+  }
+
+  .timer,
+  .timer svg {
+    width: 64px;
+    height: 64px;
+    flex-basis: 64px;
+  }
+
+  .timerValue {
+    font-size: 22px;
+  }
+
+  .currentBidValue {
+    font-size: 36px;
+  }
+
+  .bidButtons {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .bidButton {
+    min-height: 54px;
+    padding: 0 6px;
+    font-size: 17px;
+  }
+
+  .bidButtonHint {
+    font-size: 11px;
+  }
+}

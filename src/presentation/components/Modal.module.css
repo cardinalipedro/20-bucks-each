@@ -49,3 +49,22 @@
   font-size: 14px;
   font-weight: 600;
 }
+
+@media (max-width: 640px) {
+  .backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  /* Bottom sheet on phones: easier to reach with a thumb. */
+  .panel {
+    max-width: none;
+    max-height: 90vh;
+    padding: 22px 18px;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .actions > .btn {
+    flex: 1 1 0;
+  }
+}

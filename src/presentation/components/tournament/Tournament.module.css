@@ -441,3 +441,62 @@
 .awardValue {
   font-size: 26px;
 }
+
+@media (max-width: 640px) {
+  .toolbar {
+    gap: 12px;
+    padding: 14px 0;
+  }
+
+  .tabs {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .tab {
+    flex: 1 0 auto;
+    padding: 0 12px;
+  }
+
+  .controls {
+    width: 100%;
+  }
+
+  .controls > .btn,
+  .controls > button {
+    flex: 1 1 0;
+  }
+
+  .seasonLayout,
+  .playoffsLayout {
+    gap: 16px;
+  }
+
+  .table {
+    min-width: 0;
+    font-size: 14px;
+  }
+
+  .table th,
+  .table td {
+    padding: 9px 6px;
+  }
+
+  .optionalColumn {
+    display: none;
+  }
+
+  .liveScore {
+    font-size: 44px;
+  }
+
+  .championCard {
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .championCard svg {
+    width: 72px;
+    height: 72px;
+  }
+}

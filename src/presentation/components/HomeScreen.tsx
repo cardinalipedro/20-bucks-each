@@ -171,6 +171,59 @@ export function HomeScreen({ onSolo }: HomeScreenProps) {
               </button>
             </div>
           </form>
+
+          <section className={styles.publicSection} aria-labelledby="public-title">
+            <div className={styles.publicHead}>
+              <h2 id="public-title" className={`display ${styles.publicTitle}`}>
+                {t.home.publicRooms}
+              </h2>
+              <form
+                className={styles.codeForm}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (code.trim()) joinRoom(code);
+                }}
+              >
+                <div className={formStyles.field}>
+                  <label htmlFor="room-code" className={formStyles.label}>
+                    {t.home.joinByCode}
+                  </label>
+                  <input
+                    id="room-code"
+                    className={`${formStyles.input} ${styles.codeInput}`}
+                    value={code}
+                    maxLength={8}
+                    placeholder={t.home.codePlaceholder}
+                    autoComplete="off"
+                    onChange={(event) => setCode(event.target.value.toUpperCase())}
+                  />
+                </div>
+                <button type="submit" className="btn btn-outline" disabled={!code.trim()}>
+                  {t.home.join}
+                </button>
+              </form>
+            </div>
+
+            {publicRooms.length === 0 ? (
+              <p className={styles.emptyRooms}>{t.home.noPublicRooms}</p>
+            ) : (
+              <ul className={styles.roomList}>
+                {publicRooms.map((room) => (
+                  <li key={room.code} className={`card ${styles.roomCard}`}>
+                    <div className={styles.roomInfo}>
+                      <span className={styles.roomName}>{t.home.roomOf(room.hostName)}</span>
+                      <span className="muted">
+                        {t.home.seats(room.members, room.maxCoaches)} · {formatLabel[room.format]}
+                      </span>
+                    </div>
+                    <button type="button" className="btn btn-primary" onClick={() => joinRoom(room.code)}>
+                      {t.home.join}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         </section>
 
         <aside className={styles.side} aria-label={t.setup.rulesLabel}>
@@ -195,58 +248,6 @@ export function HomeScreen({ onSolo }: HomeScreenProps) {
         </aside>
       </div>
 
-      <section className={styles.publicSection} aria-labelledby="public-title">
-        <div className={styles.publicHead}>
-          <h2 id="public-title" className={`display ${styles.publicTitle}`}>
-            {t.home.publicRooms}
-          </h2>
-          <form
-            className={styles.codeForm}
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (code.trim()) joinRoom(code);
-            }}
-          >
-            <div className={formStyles.field}>
-              <label htmlFor="room-code" className={formStyles.label}>
-                {t.home.joinByCode}
-              </label>
-              <input
-                id="room-code"
-                className={`${formStyles.input} ${styles.codeInput}`}
-                value={code}
-                maxLength={8}
-                placeholder={t.home.codePlaceholder}
-                autoComplete="off"
-                onChange={(event) => setCode(event.target.value.toUpperCase())}
-              />
-            </div>
-            <button type="submit" className="btn btn-outline" disabled={!code.trim()}>
-              {t.home.join}
-            </button>
-          </form>
-        </div>
-
-        {publicRooms.length === 0 ? (
-          <p className={styles.emptyRooms}>{t.home.noPublicRooms}</p>
-        ) : (
-          <ul className={styles.roomList}>
-            {publicRooms.map((room) => (
-              <li key={room.code} className={`card ${styles.roomCard}`}>
-                <div className={styles.roomInfo}>
-                  <span className={styles.roomName}>{t.home.roomOf(room.hostName)}</span>
-                  <span className="muted">
-                    {t.home.seats(room.members, room.maxCoaches)} · {formatLabel[room.format]}
-                  </span>
-                </div>
-                <button type="button" className="btn btn-primary" onClick={() => joinRoom(room.code)}>
-                  {t.home.join}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
     </div>
   );
 }

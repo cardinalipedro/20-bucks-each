@@ -182,3 +182,19 @@
   color: var(--text-soft);
   text-align: center;
 }
+
+@media (max-width: 640px) {
+  .waitingLayout {
+    gap: 16px;
+    padding-top: 20px;
+  }
+
+  .bigCode {
+    font-size: 48px;
+    letter-spacing: 4px;
+  }
+
+  .centerCard {
+    margin-top: 32px;
+  }
+}
