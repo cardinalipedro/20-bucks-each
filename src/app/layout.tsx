@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Anton, Archivo } from 'next/font/google';
-import { I18nProvider } from '@/i18n/I18nProvider';
-import { THEME_INIT_SCRIPT } from '@/theme/theme';
+import { I18nProvider } from '@/presentation/i18n/I18nProvider';
+import { THEME_INIT_SCRIPT } from '@/presentation/theme/theme';
 import './globals.css';
 
 const display = Anton({ weight: '400', subsets: ['latin'], variable: '--font-display' });
