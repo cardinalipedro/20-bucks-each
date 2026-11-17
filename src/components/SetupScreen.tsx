@@ -127,9 +127,10 @@ export function SetupScreen({ onStart }: SetupScreenProps) {
             <h2 className="eyebrow">Como funciona</h2>
             <ul className={styles.rules}>
               <li>Todo mundo começa com $20 e precisa fechar PG, SG, SF, PF e C.</li>
-              <li>Os jogadores vão a leilão um por um, em ordem aleatória.</li>
+              <li>Só uma parte dos jogadores vai a leilão, um por um e sem você saber quem vem depois.</li>
               <li>Cada lance reinicia o cronômetro. Quando zera, o maior lance leva.</li>
               <li>Lance mínimo de $1: você sempre guarda $1 para cada vaga que falta.</li>
+              <li>Quem terminar com vaga aberta leva de graça o pior jogador que sobrou.</li>
               <li>Dinheiro que sobra não vale nada no fim.</li>
             </ul>
           </div>
