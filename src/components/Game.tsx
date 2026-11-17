@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { HUMAN_COACH_ID, useAuction, type GameConfig } from '@/hooks/useAuction';
 import { useI18n } from '@/i18n/I18nProvider';
 import { simulateTournament } from '@/lib/sim/tournament';
+import { DEFAULT_TACTIC, type Tactic } from '@/lib/sim/tactics';
 import type { Tournament } from '@/lib/sim/types';
 import { AuctionScreen } from './AuctionScreen';
 import { ExitGameProvider } from './ExitGame';
 import { ResultsScreen } from './ResultsScreen';
 import { HomeScreen } from './HomeScreen';
+import { TacticsScreen } from './tactics/TacticsScreen';
 import { TournamentScreen } from './tournament/TournamentScreen';
 
 export function Game() {
@@ -38,10 +40,34 @@ export function Game() {
 function LocalGame({ config, onRestart }: { config: GameConfig; onRestart: () => void }) {
   const { t } = useI18n();
   const { state, now, bid, pass } = useAuction(config);
+  const [tactic, setTactic] = useState<Tactic>(DEFAULT_TACTIC);
+  const [tacticChosen, setTacticChosen] = useState(false);
   const [tournament, setTournament] = useState<Tournament | null>(null);
 
   if (state.phase === 'running') {
-    return <AuctionScreen state={state} now={now} humanId={HUMAN_COACH_ID} onBid={bid} onPass={pass} />;
+    return (
+      <AuctionScreen
+        state={state}
+        now={now}
+        humanId={HUMAN_COACH_ID}
+        onBid={bid}
+        onPass={pass}
+        hideRatings={config.hideOverall}
+      />
+    );
+  }
+
+  if (!tacticChosen) {
+    const me = state.coaches.find((coach) => coach.id === HUMAN_COACH_ID)!;
+    return (
+      <TacticsScreen
+        coach={me}
+        players={state.players}
+        tactic={tactic}
+        onChange={setTactic}
+        onConfirm={() => setTacticChosen(true)}
+      />
+    );
   }
 
   if (tournament) {
@@ -55,6 +81,7 @@ function LocalGame({ config, onRestart }: { config: GameConfig; onRestart: () =>
         players: state.players,
         settings: config.tournament,
         seed: state.rngSeed,
+        tactics: { [HUMAN_COACH_ID]: tactic },
       }),
     );
 

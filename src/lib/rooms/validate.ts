@@ -48,5 +48,13 @@ export function cleanSettings(input: unknown): RoomSettings | null {
   }
 
   const tournament: TournamentSettings = { format, playoffTeams, seriesLength };
-  return { visibility, maxCoaches, fillWithBots: raw.fillWithBots, benchSize, bidSeconds, tournament };
+  return {
+    visibility,
+    maxCoaches,
+    fillWithBots: raw.fillWithBots,
+    benchSize,
+    bidSeconds,
+    hideOverall: raw.hideOverall === true,
+    tournament,
+  };
 }

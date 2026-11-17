@@ -78,6 +78,7 @@ export function HomeScreen({ onSolo }: HomeScreenProps) {
       coachCount: settings.maxCoaches,
       benchSize: settings.benchSize,
       bidSeconds: settings.bidSeconds,
+      hideOverall: settings.hideOverall,
       tournament: settings.tournament,
     });
   };

@@ -11,6 +11,7 @@ export interface GameConfig {
   coachCount: number;
   benchSize: 0 | 2;
   bidSeconds: number;
+  hideOverall: boolean;
   tournament: TournamentSettings;
 }
 

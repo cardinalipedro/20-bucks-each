@@ -1,4 +1,5 @@
 import type { AuctionState } from '../auction/types';
+import type { Tactic } from '../sim/tactics';
 import type { Tournament, TournamentFormat, TournamentSettings } from '../sim/types';
 
 export const MIN_COACHES = 2;
@@ -12,6 +13,8 @@ export interface MatchSettings {
   fillWithBots: boolean;
   benchSize: 0 | 2;
   bidSeconds: number;
+  /** Hide overall and attributes during the auction. */
+  hideOverall: boolean;
   tournament: TournamentSettings;
 }
 
@@ -21,9 +24,18 @@ export interface RoomSettings extends MatchSettings {
   visibility: Visibility;
 }
 
-export type RoomPhase = 'lobby' | 'auction' | 'tournament';
+export type RoomPhase = 'lobby' | 'auction' | 'tactics' | 'tournament';
 
-export type RoomError = 'not_found' | 'full' | 'started' | 'not_host' | 'not_enough_players' | 'too_many_members' | 'invalid';
+export type RoomError =
+  | 'not_found'
+  | 'full'
+  | 'started'
+  | 'not_host'
+  | 'not_enough_players'
+  | 'not_ready'
+  | 'too_many_members'
+  | 'kicked'
+  | 'invalid';
 
 export type Result<T> = ({ ok: true } & T) | { ok: false; error: RoomError };
 
@@ -33,9 +45,23 @@ export interface MemberView {
   name: string;
   isHost: boolean;
   connected: boolean;
+  /** Lobby: idle (a bot marked them ready). Match: a bot is playing for them. */
   away: boolean;
+  ready: boolean;
   left: boolean;
   coachId: string | null;
+}
+
+export interface TacticChoice {
+  tactic: Tactic;
+  confirmed: boolean;
+}
+
+/** Tactics phase as each client sees it: your own choice, and only who has confirmed. */
+export interface TacticsView {
+  deadline: number;
+  yours: TacticChoice | null;
+  confirmed: Record<string, boolean>;
 }
 
 /**
@@ -51,6 +77,7 @@ export interface RoomView {
   members: MemberView[];
   youId: string;
   auction: AuctionView | null;
+  tactics: TacticsView | null;
   tournament: Tournament | null;
   /** Server clock when this view was sent, to sync timers. */
   serverNow: number;
@@ -70,5 +97,6 @@ export const DEFAULT_MATCH_SETTINGS: MatchSettings = {
   fillWithBots: true,
   benchSize: 0,
   bidSeconds: 15,
+  hideOverall: false,
   tournament: { format: 'seasonAndPlayoffs', playoffTeams: 4, seriesLength: 3 },
 };

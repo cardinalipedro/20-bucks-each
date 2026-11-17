@@ -136,6 +136,38 @@ io.on('connection', (socket: Socket) => {
     safeAck(ack)(result);
   });
 
+  socket.on(CLIENT_EVENTS.roomReady, (payload: { ready?: unknown }, ack: unknown) => {
+    if (!data.code || typeof payload?.ready !== 'boolean') return safeAck(ack)({ ok: false, error: 'invalid' });
+    const result = service.setReady(data.code, token, payload.ready);
+    if (result.ok) void broadcastRoom(data.code);
+    safeAck(ack)(result);
+  });
+
+  socket.on(CLIENT_EVENTS.roomKick, async (payload: { memberId?: unknown }, ack: unknown) => {
+    const code = data.code;
+    if (!code || typeof payload?.memberId !== 'string') return safeAck(ack)({ ok: false, error: 'invalid' });
+    const result = service.kick(code, token, payload.memberId);
+    if (!result.ok) return safeAck(ack)(result);
+
+    // Tell every tab of the kicked player and take them out of the room channel.
+    const sockets = await io.in(code).fetchSockets();
+    for (const target of sockets) {
+      const targetData = target.data as SocketData;
+      if (targetData.token !== result.kickedToken) continue;
+      target.emit(SERVER_EVENTS.kicked, { code });
+      target.leave(code);
+      targetData.code = null;
+    }
+    void broadcastRoom(code);
+    safeAck(ack)({ ok: true });
+  });
+
+  socket.on(CLIENT_EVENTS.tacticSet, (payload: { tactic?: unknown; confirmed?: unknown }) => {
+    if (!data.code) return;
+    service.setTactic(data.code, token, payload?.tactic, payload?.confirmed);
+    void broadcastRoom(data.code);
+  });
+
   socket.on(CLIENT_EVENTS.auctionBid, (payload: { amount?: unknown }) => {
     if (!data.code) return;
     service.bid(data.code, token, payload?.amount);

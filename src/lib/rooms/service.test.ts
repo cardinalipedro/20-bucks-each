@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { createRng } from '../auction/rng';
-import { AWAY_AFTER_MS, EMPTY_ROOM_TTL_MS, LOBBY_RECONNECT_GRACE_MS, RoomService } from './service';
+import { AWAY_AFTER_MS, EMPTY_ROOM_TTL_MS, LOBBY_RECONNECT_GRACE_MS, RoomService, TACTICS_MS } from './service';
 import { DEFAULT_MATCH_SETTINGS, type RoomSettings } from './types';
 import { cleanSettings } from './validate';
 
@@ -21,6 +21,12 @@ function setup() {
     }
   };
   return { service, advance, clock: () => now };
+}
+
+function startMatch(service: RoomService, code: string) {
+  service.setReady(code, B, true);
+  const result = service.start(code, A);
+  assert.ok(result.ok, JSON.stringify(result));
 }
 
 function createWithTwo(settings = SETTINGS) {
@@ -48,7 +54,7 @@ describe('rooms', () => {
     const full = service.joinRoom(code, C, 'Gabi');
     assert.deepEqual(full, { ok: false, error: 'full' });
 
-    assert.ok(service.start(code, A).ok);
+    startMatch(service, code);
     assert.deepEqual(service.joinRoom(code, C, 'Gabi'), { ok: false, error: 'started' });
     assert.ok(service.joinRoom(code, B, 'Lucas').ok, 'reconnect works after start');
   });
@@ -75,7 +81,7 @@ describe('rooms', () => {
 
   it('fills empty seats with bots and plays the whole match', () => {
     const { service, code, advance } = createWithTwo();
-    assert.ok(service.start(code, A).ok);
+    startMatch(service, code);
     const view = service.view(code, A)!;
     assert.equal(view.auction!.coaches.length, 4);
     assert.equal(view.auction!.coaches.filter((c) => c.isBot).length, 2);
@@ -90,7 +96,7 @@ describe('rooms', () => {
 
   it('never sends the upcoming players or secrets to clients', () => {
     const { service, code } = createWithTwo();
-    service.start(code, A);
+    startMatch(service, code);
     const view = service.view(code, A)!;
     const json = JSON.stringify(view);
     assert.ok(!('queue' in view.auction!));
@@ -100,7 +106,7 @@ describe('rooms', () => {
 
   it('puts idle players in away mode and gives control back on activity', () => {
     const { service, code, advance } = createWithTwo();
-    service.start(code, A);
+    startMatch(service, code);
     advance(AWAY_AFTER_MS - 5_000);
     service.activity(code, B);
     advance(6_000);
@@ -118,7 +124,7 @@ describe('rooms', () => {
 
   it('a player who leaves mid-auction is replaced by a bot and the host moves on', () => {
     const { service, code } = createWithTwo();
-    service.start(code, A);
+    startMatch(service, code);
     assert.ok(service.leaveRoom(code, A).ok);
     const view = service.view(code, B)!;
     const pedro = view.members.find((m) => m.name === 'Pedro')!;
@@ -135,18 +141,91 @@ describe('rooms', () => {
     assert.equal(service.view(code, A)!.members.length, 1, 'dropped from the lobby');
 
     assert.ok(service.joinRoom(code, B, 'Lucas').ok);
-    service.start(code, A);
+    startMatch(service, code);
     service.disconnect(code, B);
     assert.ok(service.view(code, A)!.members.find((m) => m.name === 'Lucas')!.away);
   });
 
   it('deletes rooms that everyone abandoned', () => {
     const { service, code, advance } = createWithTwo();
-    service.start(code, A);
+    startMatch(service, code);
     service.disconnect(code, A);
     service.disconnect(code, B);
     advance(EMPTY_ROOM_TTL_MS + 1_000, 1_000);
     assert.equal(service.hasRoom(code), false);
+  });
+
+  it('the host can only start when everyone else is ready', () => {
+    const { service, code } = createWithTwo();
+    assert.deepEqual(service.start(code, A), { ok: false, error: 'not_ready' });
+    service.setReady(code, B, true);
+    assert.ok(service.view(code, A)!.members.every((m) => m.ready));
+    service.updateSettings(code, A, { ...SETTINGS, bidSeconds: 20 });
+    assert.ok(!service.view(code, A)!.members.find((m) => m.name === 'Lucas')!.ready, 'new rules reset ready');
+    service.setReady(code, B, true);
+    assert.ok(service.start(code, A).ok);
+  });
+
+  it('the host can kick someone, who cannot come back', () => {
+    const { service, code } = createWithTwo();
+    const lucas = service.view(code, A)!.members.find((m) => m.name === 'Lucas')!;
+    assert.deepEqual(service.kick(code, B, lucas.id), { ok: false, error: 'not_host' });
+    const kicked = service.kick(code, A, lucas.id);
+    assert.ok(kicked.ok && kicked.kickedToken === B);
+    assert.equal(service.view(code, B), null);
+    assert.deepEqual(service.joinRoom(code, B, 'Lucas'), { ok: false, error: 'kicked' });
+  });
+
+  it('idle lobby players get marked ready, and an idle host starts the match', () => {
+    const { service, code, advance } = createWithTwo();
+    advance(AWAY_AFTER_MS - 5_000);
+    service.activity(code, A);
+    advance(6_000);
+    let lucas = service.view(code, A)!.members.find((m) => m.name === 'Lucas')!;
+    assert.ok(lucas.away && lucas.ready, 'idle guest is ready');
+    assert.equal(service.view(code, A)!.phase, 'lobby', 'active host still decides');
+
+    advance(AWAY_AFTER_MS);
+    const view = service.view(code, A)!;
+    assert.equal(view.phase, 'auction', 'away host started the match');
+    lucas = view.members.find((m) => m.name === 'Lucas')!;
+    assert.ok(lucas.away, 'away players start on autopilot');
+  });
+
+  it('after the auction everyone picks a tactic; choices stay secret', () => {
+    const { service, code, advance } = createWithTwo();
+    startMatch(service, code);
+    for (let i = 0; i < 20_000 && service.view(code, A)!.phase === 'auction'; i++) {
+      advance(500, 500);
+      if (i % 20 === 0) {
+        service.activity(code, A);
+        service.activity(code, B);
+      }
+    }
+    let view = service.view(code, A)!;
+    assert.equal(view.phase, 'tactics');
+    assert.ok(view.tactics && view.tactics.yours && !view.tactics.yours.confirmed);
+    assert.deepEqual(Object.keys(view.tactics).sort(), ['confirmed', 'deadline', 'yours'], 'only your own tactic is sent');
+    assert.equal(Object.values(view.tactics.confirmed).filter(Boolean).length, 2, 'bots confirmed right away');
+
+    service.setTactic(code, A, { offense: 'threes', pace: 'fast' }, true);
+    service.setTactic(code, B, { offense: 'nope', pace: 'fast' }, true);
+    advance(500);
+    assert.equal(service.view(code, A)!.phase, 'tactics', 'invalid tactic ignored, still waiting for Lucas');
+
+    service.setTactic(code, B, { offense: 'paint', pace: 'slow' }, true);
+    advance(500);
+    view = service.view(code, A)!;
+    assert.equal(view.phase, 'tournament');
+    assert.deepEqual(view.tournament!.tactics['coach-0'], { offense: 'threes', pace: 'fast' });
+  });
+
+  it('the tactics phase ends on its own when time runs out', () => {
+    const { service, code, advance } = createWithTwo();
+    startMatch(service, code);
+    advance(30 * 60_000, 1_000);
+    assert.equal(service.view(code, A)!.phase, 'tournament');
+    assert.ok(TACTICS_MS > 0);
   });
 
   it('validates settings sent by clients', () => {

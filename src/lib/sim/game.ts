@@ -1,6 +1,7 @@
 import type { Rng } from '../auction/rng';
 import type { Coach, Player } from '../auction/types';
 import { inverseNormalCdf, normal, winProbability } from './probability';
+import { PACE_POINTS, type Pace } from './tactics';
 import type { GameResult, PlayerLine } from './types';
 
 const MARGIN_SPREAD = 12;
@@ -13,20 +14,24 @@ const BENCH_MINUTES = 0.35;
 interface GameContext {
   players: Record<string, Player>;
   ratings: Record<string, number>;
+  /** Faster games have more points; missing = normal pace. */
+  paces?: Record<string, Pace>;
 }
 
 /**
  * Simulates one game. The winner follows `winProbability` (65% strength,
  * 35% luck); the score, quarters and box score are generated around it.
  */
-export function simulateGame(home: Coach, away: Coach, { players, ratings }: GameContext, rng: Rng): GameResult {
+export function simulateGame(home: Coach, away: Coach, { players, ratings, paces = {} }: GameContext, rng: Rng): GameResult {
   const homeRating = ratings[home.id];
   const awayRating = ratings[away.id];
   const p = winProbability(homeRating, awayRating);
 
   // Margin ~ Normal(mean, spread) with the mean chosen so that P(margin > 0) = p.
   const margin = MARGIN_SPREAD * inverseNormalCdf(p) + MARGIN_SPREAD * normal(rng);
-  const total = BASE_TOTAL_POINTS + ((homeRating + awayRating) / 2 - 85) + TOTAL_POINTS_SPREAD * normal(rng);
+  const paceShift = PACE_POINTS[paces[home.id] ?? 'normal'] + PACE_POINTS[paces[away.id] ?? 'normal'];
+  const total =
+    BASE_TOTAL_POINTS + paceShift + ((homeRating + awayRating) / 2 - 85) + TOTAL_POINTS_SPREAD * normal(rng);
 
   let homeRegulation = Math.round((total + margin) / 2);
   let awayRegulation = Math.round((total - margin) / 2);

@@ -178,6 +178,14 @@
   color: var(--muted);
 }
 
+.hiddenNote {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px dashed var(--border-strong);
+  font-size: 14px;
+}
+
 .ratings {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

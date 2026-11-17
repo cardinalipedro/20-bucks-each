@@ -5,6 +5,9 @@ import { useI18n } from '@/i18n/I18nProvider';
 import type { MemberView, Result, RoomSettings, RoomView } from '@/lib/rooms/types';
 import formStyles from '../Form.module.css';
 import { Header } from '../Header';
+import { Modal } from '../Modal';
+import modalStyles from '../Modal.module.css';
+import { AwayBanner } from './AwayBanner';
 import { RoomSettingsDialog } from './RoomSettingsDialog';
 import styles from './Room.module.css';
 
@@ -15,19 +18,35 @@ interface WaitingRoomProps {
   me: MemberView;
   onStart: () => Promise<Result<object>>;
   onUpdateSettings: (settings: RoomSettings) => Promise<Result<object>>;
+  onSetReady: (ready: boolean) => Promise<Result<object>>;
+  onKick: (memberId: string) => Promise<Result<object>>;
   onLeave: () => void;
+  onComeBack: () => void;
 }
 
-export function WaitingRoom({ view, me, onStart, onUpdateSettings, onLeave }: WaitingRoomProps) {
+export function WaitingRoom({
+  view,
+  me,
+  onStart,
+  onUpdateSettings,
+  onSetReady,
+  onKick,
+  onLeave,
+  onComeBack,
+}: WaitingRoomProps) {
   const { t } = useI18n();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [kickTarget, setKickTarget] = useState<MemberView | null>(null);
 
   const { settings } = view;
   const members = view.members.filter((member) => !member.left);
   const openSeats = Math.max(0, settings.maxCoaches - members.length);
-  const canStart = settings.fillWithBots ? settings.maxCoaches >= 2 : members.length >= 2;
+  const enoughCoaches = settings.fillWithBots ? settings.maxCoaches >= 2 : members.length >= 2;
+  const readyCount = members.filter((member) => member.ready).length;
+  const allReady = readyCount === members.length;
+  const canStart = enoughCoaches && allReady;
 
   const copyLink = async () => {
     try {
@@ -39,9 +58,16 @@ export function WaitingRoom({ view, me, onStart, onUpdateSettings, onLeave }: Wa
     }
   };
 
-  const start = async () => {
-    const result = await onStart();
-    if (!result.ok) setError(t.errors[result.error]);
+  const run = async (action: () => Promise<Result<object>>) => {
+    const result = await action();
+    setError(result.ok ? null : t.errors[result.error]);
+  };
+
+  const confirmKick = async () => {
+    if (!kickTarget) return;
+    const target = kickTarget;
+    setKickTarget(null);
+    await run(() => onKick(target.id));
   };
 
   const formatLabel = {
@@ -85,6 +111,10 @@ export function WaitingRoom({ view, me, onStart, onUpdateSettings, onLeave }: Wa
               <dt>{t.setup.clockLabel}</dt>
               <dd>{settings.bidSeconds}s</dd>
             </div>
+            <div>
+              <dt>{t.setup.overallLabel}</dt>
+              <dd>{settings.hideOverall ? t.setup.overallHidden : t.setup.overallVisible}</dd>
+            </div>
           </dl>
 
           {me.isHost && (
@@ -111,8 +141,21 @@ export function WaitingRoom({ view, me, onStart, onUpdateSettings, onLeave }: Wa
                 <span className={styles.memberName}>{member.name}</span>
                 {!member.connected && <span className="muted">{t.room.disconnected}</span>}
                 <span className={styles.badges}>
+                  {member.away && <span className={styles.badgeAway}>{t.away.badge}</span>}
+                  {member.ready && !member.isHost && <span className={styles.badgeReady}>{t.room.ready}</span>}
                   {member.isHost && <span className={styles.badge}>{t.room.host}</span>}
                   {member.id === me.id && <span className={styles.badgeYou}>{t.common.youBadge}</span>}
+                  {me.isHost && member.id !== me.id && (
+                    <button
+                      type="button"
+                      className={styles.kick}
+                      aria-label={t.room.kick(member.name)}
+                      title={t.room.kick(member.name)}
+                      onClick={() => setKickTarget(member)}
+                    >
+                      <CloseIcon />
+                    </button>
+                  )}
                 </span>
               </li>
             ))}
@@ -128,14 +171,48 @@ export function WaitingRoom({ view, me, onStart, onUpdateSettings, onLeave }: Wa
           )}
 
           {me.isHost ? (
-            <button type="button" className="btn btn-primary btn-big" disabled={!canStart} onClick={start}>
-              {t.room.start}
-            </button>
+            <>
+              {!allReady && <p className="muted">{t.room.waitingReady(readyCount, members.length)}</p>}
+              <button
+                type="button"
+                className="btn btn-primary btn-big"
+                disabled={!canStart}
+                onClick={() => run(onStart)}
+              >
+                {t.room.start}
+              </button>
+            </>
           ) : (
-            <p className={styles.waitingNote}>{t.room.waitingHost}</p>
+            <>
+              <button
+                type="button"
+                className={`btn btn-big ${me.ready ? '' : 'btn-primary'}`}
+                aria-pressed={me.ready}
+                onClick={() => run(() => onSetReady(!me.ready))}
+              >
+                {me.ready ? t.room.notReady : t.room.imReady}
+              </button>
+              <p className={styles.waitingNote}>{t.room.waitingHost}</p>
+            </>
           )}
         </section>
       </div>
+
+      {kickTarget && (
+        <Modal title={t.room.kickTitle(kickTarget.name)} onClose={() => setKickTarget(null)} role="alertdialog">
+          <p className={modalStyles.body}>{t.room.kickBody}</p>
+          <div className={modalStyles.actions}>
+            <button type="button" className="btn" onClick={() => setKickTarget(null)}>
+              {t.room.cancel}
+            </button>
+            <button type="button" className="btn btn-primary" onClick={confirmKick}>
+              {t.room.kickConfirm}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {me.away && <AwayBanner onBack={onComeBack} inLobby />}
 
       {settingsOpen && (
         <RoomSettingsDialog
@@ -146,6 +223,14 @@ export function WaitingRoom({ view, me, onStart, onUpdateSettings, onLeave }: Wa
         />
       )}
     </div>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
   );
 }
 

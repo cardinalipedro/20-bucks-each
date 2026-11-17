@@ -8,6 +8,9 @@ export const CLIENT_EVENTS = {
   roomLeave: 'room:leave',
   roomSettings: 'room:settings',
   roomStart: 'room:start',
+  roomReady: 'room:ready',
+  roomKick: 'room:kick',
+  tacticSet: 'tactics:set',
   auctionBid: 'auction:bid',
   auctionPass: 'auction:pass',
   activity: 'presence:activity',
@@ -16,4 +19,5 @@ export const CLIENT_EVENTS = {
 export const SERVER_EVENTS = {
   roomState: 'room:state',
   lobbyRooms: 'lobby:rooms',
+  kicked: 'room:kicked',
 } as const;

@@ -15,6 +15,8 @@ interface AuctionScreenProps {
   humanId: string;
   onBid: (amount: number) => void;
   onPass: () => void;
+  /** Hide overall and attributes so bids rely on NBA knowledge. */
+  hideRatings?: boolean;
 }
 
 const BID_INCREMENTS = [1, 2, 5];
@@ -23,7 +25,7 @@ const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
 
 const RATING_KEYS = ['shooting', 'finishing', 'playmaking', 'defense', 'rebounding', 'athleticism'] as const;
 
-export function AuctionScreen({ state, now, humanId, onBid, onPass }: AuctionScreenProps) {
+export function AuctionScreen({ state, now, humanId, onBid, onPass, hideRatings = false }: AuctionScreenProps) {
   const { t } = useI18n();
   const lot = state.lot;
   const me = state.coaches.find((coach) => coach.id === humanId)!;
@@ -127,24 +129,28 @@ export function AuctionScreen({ state, now, humanId, onBid, onPass }: AuctionScr
                 </div>
               </div>
               <div className={styles.overall}>
-                <span className={`display ${styles.overallValue}`}>{player.overall}</span>
+                <span className={`display ${styles.overallValue}`}>{hideRatings ? '?' : player.overall}</span>
                 <span className={styles.overallLabel}>OVR</span>
               </div>
             </div>
 
-            <div className={styles.ratings}>
-              {RATING_KEYS.map((key) => (
-                <div key={key} className={styles.rating}>
-                  <div className={styles.ratingHead}>
-                    <span className={styles.ratingLabel}>{t.auction.ratings[key]}</span>
-                    <strong>{player.ratings[key]}</strong>
+            {hideRatings ? (
+              <p className={`muted ${styles.hiddenNote}`}>{t.auction.hiddenRatings}</p>
+            ) : (
+              <div className={styles.ratings}>
+                {RATING_KEYS.map((key) => (
+                  <div key={key} className={styles.rating}>
+                    <div className={styles.ratingHead}>
+                      <span className={styles.ratingLabel}>{t.auction.ratings[key]}</span>
+                      <strong>{player.ratings[key]}</strong>
+                    </div>
+                    <div className={styles.bar}>
+                      <div className={styles.barFill} style={{ width: `${player.ratings[key]}%` }} />
+                    </div>
                   </div>
-                  <div className={styles.bar}>
-                    <div className={styles.barFill} style={{ width: `${player.ratings[key]}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className={`card ${styles.bidPanel}`}>

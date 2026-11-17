@@ -5,6 +5,7 @@ import { PLAYERS } from '@/data/players';
 import type { AuctionState, Player } from '@/lib/auction/types';
 import { CLIENT_EVENTS, SERVER_EVENTS } from '@/lib/rooms/events';
 import type { RoomError, RoomSettings, RoomView } from '@/lib/rooms/types';
+import type { Tactic } from '@/lib/sim/tactics';
 import { getSocket, request } from '@/lib/socket';
 
 const CLOCK_MS = 200;
@@ -48,26 +49,35 @@ export function useRoom(code: string, name: string) {
       setStatus({ kind: 'ready', view });
     };
 
+    const onKicked = (payload: { code?: string }) => {
+      if (payload?.code === code) setStatus({ kind: 'error', error: 'kicked' });
+    };
+
     socket.on(SERVER_EVENTS.roomState, onState);
+    socket.on(SERVER_EVENTS.kicked, onKicked);
     // Re-join after every reconnect so the server knows we are back.
     socket.on('connect', join);
     if (socket.connected) void join();
 
     return () => {
       socket.off(SERVER_EVENTS.roomState, onState);
+      socket.off(SERVER_EVENTS.kicked, onKicked);
       socket.off('connect', join);
     };
   }, [code, name]);
 
   const view = status.kind === 'ready' ? status.view : null;
   const inAuction = view?.phase === 'auction';
+  // Phases where idle players go "away": everything except watching the results.
+  const tracksPresence = view !== null && view.phase !== 'tournament';
 
-  // Local clock for the auction timer, corrected by the server's clock.
+  // Local clock for the auction and tactics timers, corrected by the server's clock.
+  const needsClock = inAuction || view?.phase === 'tactics';
   useEffect(() => {
-    if (!inAuction) return;
+    if (!needsClock) return;
     const id = window.setInterval(() => setNow(Date.now()), CLOCK_MS);
     return () => window.clearInterval(id);
-  }, [inAuction]);
+  }, [needsClock]);
 
   const sendActivity = useCallback((force = false) => {
     const current = Date.now();
@@ -76,14 +86,14 @@ export function useRoom(code: string, name: string) {
     getSocket().emit(CLIENT_EVENTS.activity);
   }, []);
 
-  // Any input counts as "still here" during the auction.
+  // Any input counts as "still here".
   useEffect(() => {
-    if (!inAuction) return;
+    if (!tracksPresence) return;
     const onInput = () => sendActivity();
     const events = ['pointerdown', 'pointermove', 'keydown', 'touchstart', 'wheel'] as const;
     events.forEach((event) => window.addEventListener(event, onInput, { passive: true }));
     return () => events.forEach((event) => window.removeEventListener(event, onInput));
-  }, [inAuction, sendActivity]);
+  }, [tracksPresence, sendActivity]);
 
   const auction = useMemo(() => (view ? toAuctionState(view) : null), [view]);
   const me = view?.members.find((member) => member.id === view.youId) ?? null;
@@ -98,6 +108,9 @@ export function useRoom(code: string, name: string) {
     pass: () => getSocket().emit(CLIENT_EVENTS.auctionPass),
     comeBack: () => sendActivity(true),
     start: () => request(CLIENT_EVENTS.roomStart),
+    setReady: (ready: boolean) => request(CLIENT_EVENTS.roomReady, { ready }),
+    kick: (memberId: string) => request(CLIENT_EVENTS.roomKick, { memberId }),
+    setTactic: (tactic: Tactic, confirmed: boolean) => getSocket().emit(CLIENT_EVENTS.tacticSet, { tactic, confirmed }),
     updateSettings: (settings: RoomSettings) => request(CLIENT_EVENTS.roomSettings, { settings }),
     leave: () => request(CLIENT_EVENTS.roomLeave),
   };

@@ -63,11 +63,26 @@ src/
 ## Salas e modo ausente
 
 - **Pública:** aparece na lista da tela inicial. **Privada:** só entra quem tem o link ou o código.
-- O dono da sala pode mudar visibilidade, limite de técnicos e regras antes de começar (botão Configurações). Se o dono sair, outro jogador vira dono.
+- O dono da sala pode mudar visibilidade, limite de técnicos e regras antes de começar (botão Configurações). Mudar as regras tira o "pronto" de todo mundo. Se o dono sair, outro jogador vira dono.
+- Todo mundo precisa clicar em **Estou pronto** antes do dono conseguir começar.
+- O dono pode **expulsar** alguém da sala de espera; quem foi expulso não consegue voltar naquela sala.
 - Vagas vazias viram bots na hora de começar (se a opção estiver ligada).
-- **Ausente:** 45s sem mexer no leilão (mouse, toque ou teclado), ou cair a conexão, e um bot assume seu time. Qualquer movimento ou o botão "Voltar a jogar" devolve o controle (`AWAY_AFTER_MS` em `lib/rooms/service.ts`).
+- **Ausente:** 45s sem mexer (mouse, toque ou teclado), ou cair a conexão, e um bot assume (`AWAY_AFTER_MS` em `lib/rooms/service.ts`). Qualquer movimento ou o botão "Voltar a jogar" devolve o controle.
+  - Na sala de espera, o bot marca você como pronto. Se o **dono** estiver ausente e todos os outros prontos, o bot dele começa a partida.
+  - No leilão, o bot dá lances por você.
+  - Na tática, o bot escolhe a que mais combina com o seu elenco.
 - Quem **sai** da partida é substituído por um bot de vez.
 - Recarregar a página não tira você da sala: o navegador guarda um token secreto que devolve sua vaga.
+
+## Tática
+
+Depois do leilão cada técnico escolhe **estilo de ataque** (Equilibrado, Chuva de 3, Garrafão) e **ritmo** (Lento, Normal, Rápido). Nas salas são 60s (`TACTICS_MS`); se o tempo acabar, vale o que estiver marcado.
+
+- Cada estilo olha um ponto do elenco (média dos titulares): Chuva de 3 → arremesso; Garrafão → finalização + rebote; Rápido → atletismo; Lento → armação. Equilibrado e Normal não mudam nada.
+- Acima da média da liga, o estilo soma força; abaixo, tira. Cada parte vai de −3 a +3, e o total fica entre −4 e +4 (`lib/sim/tactics.ts`).
+- O ritmo também muda o placar: jogos rápidos têm mais pontos, lentos têm menos.
+- A tela mostra o encaixe de cada opção (de "Encaixe perfeito" até "Não combina") e a força final do time. As táticas dos outros ficam secretas até os jogos.
+- Os bots sempre escolhem a tática que mais combina com o elenco deles.
 
 ## Publicar online
 

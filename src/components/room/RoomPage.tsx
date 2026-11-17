@@ -12,6 +12,7 @@ import { ExitGameProvider } from '../ExitGame';
 import formStyles from '../Form.module.css';
 import { Header } from '../Header';
 import { AwayBanner } from './AwayBanner';
+import { RoomTactics } from './RoomTactics';
 import { RoomTournament } from './RoomTournament';
 import { WaitingRoom } from './WaitingRoom';
 import styles from './Room.module.css';
@@ -111,7 +112,10 @@ function RoomScreen({ code, name }: { code: string; name: string }) {
         me={me}
         onStart={room.start}
         onUpdateSettings={room.updateSettings}
+        onSetReady={room.setReady}
+        onKick={room.kick}
         onLeave={leaveAndGoHome}
+        onComeBack={room.comeBack}
       />
     );
   }
@@ -120,7 +124,20 @@ function RoomScreen({ code, name }: { code: string; name: string }) {
     <ExitGameProvider onExit={leaveAndGoHome}>
       {view.phase === 'auction' && auction && me.coachId && (
         <>
-          <AuctionScreen state={auction} now={room.now} humanId={me.coachId} onBid={room.bid} onPass={room.pass} />
+          <AuctionScreen
+            state={auction}
+            now={room.now}
+            humanId={me.coachId}
+            onBid={room.bid}
+            onPass={room.pass}
+            hideRatings={view.settings.hideOverall}
+          />
+          {me.away && <AwayBanner onBack={room.comeBack} />}
+        </>
+      )}
+      {view.phase === 'tactics' && auction && view.tactics && me.coachId && (
+        <>
+          <RoomTactics auction={auction} tactics={view.tactics} coachId={me.coachId} now={room.now} onSet={room.setTactic} />
           {me.away && <AwayBanner onBack={room.comeBack} />}
         </>
       )}

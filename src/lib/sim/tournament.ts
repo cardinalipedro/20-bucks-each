@@ -1,6 +1,7 @@
 import { createRng, shuffle, type Rng } from '../auction/rng';
 import type { Coach, Player } from '../auction/types';
 import { simulateGame } from './game';
+import { bestTactic, DEFAULT_TACTIC, tacticBonus, teamProfile, type Tactic } from './tactics';
 import { teamRating } from './strength';
 import type {
   GameResult,
@@ -22,14 +23,30 @@ interface SimulateInput {
   players: Record<string, Player>;
   settings: TournamentSettings;
   seed: number;
+  /** Chosen tactics per coach. Missing: bots use their best fit, humans the default. */
+  tactics?: Record<string, Tactic>;
 }
 
 /** Simulates the whole competition up front; the UI then reveals it step by step. */
-export function simulateTournament({ coaches, players, settings, seed }: SimulateInput): Tournament {
+export function simulateTournament({ coaches, players, settings, seed, tactics = {} }: SimulateInput): Tournament {
   const rng = createRng(seed);
-  const ratings = Object.fromEntries(coaches.map((coach) => [coach.id, teamRating(coach, players)]));
+  const chosen: Record<string, Tactic> = Object.fromEntries(
+    coaches.map((coach) => [
+      coach.id,
+      tactics[coach.id] ?? (coach.isBot ? bestTactic(teamProfile(coach, players)) : DEFAULT_TACTIC),
+    ]),
+  );
+  const baseRatings = Object.fromEntries(coaches.map((coach) => [coach.id, teamRating(coach, players)]));
+  const ratings = Object.fromEntries(
+    coaches.map((coach) => [
+      coach.id,
+      Math.round((baseRatings[coach.id] + tacticBonus(teamProfile(coach, players), chosen[coach.id])) * 10) / 10,
+    ]),
+  );
+  const paces = Object.fromEntries(coaches.map((coach) => [coach.id, chosen[coach.id].pace]));
   const byId = Object.fromEntries(coaches.map((coach) => [coach.id, coach]));
-  const play = (homeId: string, awayId: string) => simulateGame(byId[homeId], byId[awayId], { players, ratings }, rng);
+  const play = (homeId: string, awayId: string) =>
+    simulateGame(byId[homeId], byId[awayId], { players, ratings, paces }, rng);
 
   const hasSeason = settings.format !== 'playoffsOnly';
   const hasPlayoffs = settings.format !== 'seasonOnly';
@@ -60,6 +77,8 @@ export function simulateTournament({ coaches, players, settings, seed }: Simulat
   return {
     settings,
     ratings,
+    baseRatings,
+    tactics: chosen,
     seasonRounds,
     finalStandings,
     playoffRounds,

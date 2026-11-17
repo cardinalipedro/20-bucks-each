@@ -7,7 +7,16 @@ import type { AuctionState } from '../auction/types';
 import { allocate, simulateGame } from './game';
 import { winProbability } from './probability';
 import { bracketOrder, roundRobin, simulateTournament } from './tournament';
+import { bestTactic, OFFENSE_STYLES, offenseBonus, PACES, paceBonus, teamProfile, type Tactic, type TeamProfile } from './tactics';
 import type { TournamentFormat } from './types';
+
+const teamProfileOf = teamProfile;
+const bestOf = bestTactic;
+function worstOf(profile: TeamProfile): Tactic {
+  const offense = [...OFFENSE_STYLES].sort((a, b) => offenseBonus(profile, a) - offenseBonus(profile, b))[0];
+  const pace = [...PACES].sort((a, b) => paceBonus(profile, a) - paceBonus(profile, b))[0];
+  return { offense, pace };
+}
 
 function finishedAuction(coachCount: number, benchSize: 0 | 2 = 0, seed = 5): AuctionState {
   let state = createAuction({
@@ -151,5 +160,59 @@ describe('tournament', () => {
       if (t.championId === best) bestTitles += 1;
     }
     assert.ok(bestTitles > 0 && bestTitles < runs, `best team won ${bestTitles}/${runs}`);
+  });
+});
+
+describe('tactics', () => {
+  it('rewards a style that fits the roster and punishes one that does not', async () => {
+    const { offenseBonus, paceBonus, bestTactic, tacticBonus, fitLevel } = await import('./tactics');
+    const shooters = { shooting: 86, paint: 72, athleticism: 78, playmaking: 80 };
+    assert.ok(offenseBonus(shooters, 'threes') > 2);
+    assert.ok(offenseBonus(shooters, 'paint') < -2);
+    assert.equal(offenseBonus(shooters, 'balanced'), 0);
+    assert.ok(paceBonus(shooters, 'fast') < 0 && paceBonus(shooters, 'slow') > 0);
+    assert.deepEqual(bestTactic(shooters), { offense: 'threes', pace: 'slow' });
+    assert.ok(tacticBonus(shooters, { offense: 'threes', pace: 'slow' }) <= 4, 'total bonus is capped');
+    assert.equal(fitLevel(2), 'great');
+    assert.equal(fitLevel(-2), 'bad');
+  });
+
+  it('the best tactic beats a bad one over many seasons', () => {
+    const { coaches, players } = finishedAuction(2, 0, 21);
+    const [a] = coaches;
+    const profile = teamProfileOf(a, players);
+    const titlesWith = (tactic: Tactic) => {
+      let titles = 0;
+      for (let seed = 0; seed < 150; seed++) {
+        const t = simulateTournament({
+          coaches,
+          players,
+          settings: { format: 'seasonOnly', playoffTeams: 4, seriesLength: 1 },
+          seed,
+          tactics: { [a.id]: tactic },
+        });
+        if (t.championId === a.id) titles += 1;
+      }
+      return titles;
+    };
+    const good = titlesWith(bestOf(profile));
+    const bad = titlesWith(worstOf(profile));
+    assert.ok(good > bad, `good ${good} vs bad ${bad}`);
+  });
+
+  it('fast games score more than slow games', () => {
+    const { coaches, players } = finishedAuction(2);
+    const [a, b] = coaches;
+    const ratings = { [a.id]: 85, [b.id]: 85 };
+    const rng = createRng(4);
+    const average = (pace: 'fast' | 'slow') => {
+      let total = 0;
+      for (let i = 0; i < 300; i++) {
+        const game = simulateGame(a, b, { players, ratings, paces: { [a.id]: pace, [b.id]: pace } }, rng);
+        total += game.homeScore + game.awayScore;
+      }
+      return total / 300;
+    };
+    assert.ok(average('fast') - average('slow') > 30);
   });
 });

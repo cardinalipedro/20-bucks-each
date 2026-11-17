@@ -1,3 +1,5 @@
+import type { Tactic } from './tactics';
+
 export type TournamentFormat = 'seasonAndPlayoffs' | 'seasonOnly' | 'playoffsOnly';
 
 export interface TournamentSettings {
@@ -70,8 +72,11 @@ export interface PlayerSeasonStats {
 
 export interface Tournament {
   settings: TournamentSettings;
-  /** Team rating used by the simulation, per coach. */
+  /** Team rating used by the simulation, per coach (roster + tactic). */
   ratings: Record<string, number>;
+  /** Roster-only rating, before the tactic. */
+  baseRatings: Record<string, number>;
+  tactics: Record<string, Tactic>;
   seasonRounds: SeasonRound[];
   finalStandings: Standing[];
   playoffRounds: PlayoffRound[];

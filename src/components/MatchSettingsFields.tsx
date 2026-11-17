@@ -97,6 +97,18 @@ export function MatchSettingsFields({ value, onChange, mode, minCoaches = MIN_CO
         </fieldset>
       </div>
 
+      <div className={styles.field}>
+        <label className={styles.checkbox}>
+          <input
+            type="checkbox"
+            checked={value.hideOverall}
+            onChange={(event) => set({ hideOverall: event.target.checked })}
+          />
+          {t.setup.hideOverall}
+        </label>
+        <p className={styles.hint}>{t.setup.hideOverallHint}</p>
+      </div>
+
       <fieldset className={styles.fieldset}>
         <legend className={styles.label}>{t.setup.formatLabel}</legend>
         <div className="segmented">
