@@ -29,7 +29,14 @@ export function botValuation(bot: Coach, player: Player, state: AuctionState): n
   const benchOnly = slotIndex !== -1 && bot.roster[slotIndex].kind === 'BENCH';
   const needFactor = benchOnly ? 0.5 : 1;
 
-  const value = basePrice(player.overall) * scale * bot.aggressiveness * budgetFactor * needFactor;
+  // When players are running out, filling the roster gets urgent.
+  const remainingPlayers = state.queue.length + 1;
+  const openSlots = state.coaches.reduce((sum, coach) => sum + emptySlotCount(coach), 0);
+  const scarcity = remainingPlayers / Math.max(openSlots, 1);
+  const scarcityFactor = Math.min(1.5, Math.max(1, 1.3 / scarcity));
+
+  const value =
+    basePrice(player.overall) * scale * bot.aggressiveness * budgetFactor * needFactor * scarcityFactor;
   return Math.max(1, Math.floor(value));
 }
 

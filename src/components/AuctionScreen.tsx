@@ -15,7 +15,6 @@ interface AuctionScreenProps {
 }
 
 const BID_INCREMENTS = [1, 2, 5];
-const QUEUE_PREVIEW = 5;
 const RING_RADIUS = 46;
 const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
 
@@ -49,11 +48,15 @@ export function AuctionScreen({ state, now, humanId, onBid, onPass }: AuctionScr
   const isUrgent = secondsLeft <= 3;
 
   const lastResult = state.history.at(-1);
-  const upcoming = state.queue.slice(0, QUEUE_PREVIEW).map((id) => state.players[id]);
+  const playersLeft = state.queue.length + 1;
+  const openSlots = state.coaches.reduce(
+    (sum, coach) => sum + coach.roster.filter((slot) => slot.playerId === null).length,
+    0,
+  );
 
   return (
     <div className="container">
-      <Header subtitle={`Jogador ${state.lotNumber} · ${state.queue.length} na fila`}>
+      <Header subtitle={`Jogador ${state.lotNumber} · restam ${playersLeft} jogadores para ${openSlots} vagas`}>
         <div className={styles.balance}>
           <span className="muted">Seu saldo</span>
           <span className={`display ${styles.balanceValue}`}>{formatMoney(me.cash)}</span>
@@ -198,22 +201,6 @@ export function AuctionScreen({ state, now, humanId, onBid, onPass }: AuctionScr
             </div>
           </div>
 
-          {upcoming.length > 0 && (
-            <div>
-              <h2 className="eyebrow">Próximos no leilão</h2>
-              <ul className={styles.queue}>
-                {upcoming.map((next) => (
-                  <li key={next.id} className={styles.queueItem}>
-                    <div className={styles.queueHead}>
-                      <span className="muted">{next.positions[0]}</span>
-                      <span className={`display ${styles.queueOverall}`}>{next.overall}</span>
-                    </div>
-                    <span className={styles.queueName}>{next.name}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </section>
 
         <section className={`card ${styles.coaches}`} aria-label="Técnicos">

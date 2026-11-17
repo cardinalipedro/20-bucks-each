@@ -1,5 +1,6 @@
 import { botReactionDelay, decideBot } from './bots';
-import { createRng, shuffle, type Rng } from './rng';
+import { buildPool } from './pool';
+import { createRng, type Rng } from './rng';
 import { canBidOn, createRoster, findSlotFor, isRosterFull, maxBid, minNextBid, topBid } from './rules';
 import type { AuctionSettings, AuctionState, Coach, Lot, Player } from './types';
 
@@ -35,10 +36,7 @@ export function createAuction({ settings, players, coaches, seed, now }: CreateA
       roster: createRoster(settings),
       aggressiveness: coach.isBot ? rng.between(0.85, 1.25) : 1,
     })),
-    queue: shuffle(
-      players.map((player) => player.id),
-      rng,
-    ),
+    queue: buildPool(players, coaches.length, settings, rng),
     lot: null,
     unsold: [],
     history: [],
@@ -230,11 +228,14 @@ function openNextLot(state: AuctionState, now: number, rng: Rng): AuctionState {
   return finish({ ...state, queue, unsold });
 }
 
-/** Ends the auction, giving any remaining empty slot the best free agent for $0. */
+/**
+ * Ends the auction. Any slot still open gets the WORST leftover player for $0,
+ * so passing on everyone while waiting for a star does not pay off.
+ */
 function finish(state: AuctionState): AuctionState {
   const pool = [...state.queue, ...state.unsold]
     .map((id) => state.players[id])
-    .sort((a, b) => b.overall - a.overall);
+    .sort((a, b) => a.overall - b.overall);
 
   const coaches = state.coaches.map((original) => {
     let coach = original;
