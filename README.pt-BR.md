@@ -6,7 +6,7 @@
 
 **Um jogo de leilão de jogadores da NBA em tempo real. Cada um tem $20 para montar o quinteto mais forte.**
 
-Dispute jogadores ao vivo com amigos (ou bots), monte a escalação e a tática, e veja uma temporada e playoffs simulados decidirem quem montou o melhor time.
+### [▶ Jogue agora](https://20-bucks-each.vercel.app)
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs)
 ![React](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)
@@ -21,43 +21,52 @@ Dispute jogadores ao vivo com amigos (ou bots), monte a escalação e a tática,
   ![Leilão ao vivo](docs/auction.png)
 -->
 
-## Sobre
+## O que é
 
-Inspirado nos vídeos de leilão "$20 each" de criadores americanos de esporte e no jogo brasileiro [100pracada](https://100pracada.thefenomeno.com/). Cada técnico começa com $20 e precisa fechar PG, SG, SF, PF e C dando lances em um jogador por vez. Gastar tudo num craque ou espalhar o dinheiro? Depois, a simulação decide.
+Os técnicos entram numa sala, cada um com $20. Os jogadores da NBA vão a leilão um por um, e todo mundo dá lances ao vivo para fechar PG, SG, SF, PF e C. Depois do leilão, cada técnico escolhe a escalação e a tática, e uma temporada e playoffs simulados decidem quem montou o melhor time. Dá para jogar com amigos em salas públicas ou privadas, ou treinar sozinho contra bots.
 
-## Funcionalidades
+## Por que eu fiz
 
-**Multiplayer**
-- Salas públicas (listadas ao vivo na tela inicial) e privadas, compartilhadas por link ou código, de 2 a 16 técnicos.
-- Controles do dono: mudar regras e visibilidade, expulsar jogadores e começar quando todos estiverem prontos.
-- Vagas vazias completadas com bots. Quem sai da partida é substituído por um bot de vez.
-- **Modo ausente**: depois de 45 s sem mexer (ou se a conexão cair), um bot assume. No lobby ele marca você como pronto; no leilão, dá lances por você; na tática, escolhe a que mais combina com o seu elenco. Qualquer movimento devolve o controle.
-- Recarregar a página não tira você da sala: o navegador guarda um token secreto que nunca é enviado aos outros jogadores.
+Duas coisas me inspiraram. Uma é um formato de vídeo de criadores americanos de esporte: cada um recebe "$20 each", eles leiloam jogadores e discutem quem montou o melhor time. A outra é o [100pracada](https://100pracada.thefenomeno.com/), jogo brasileiro de navegador que faz o mesmo com futebol. Eu queria a versão da NBA, algo para jogar com os amigos, e um projeto de verdade para aprender: multiplayer em tempo real, lógica de jogo, probabilidade e deploy, e não só mais um CRUD.
 
-**Leilão**
-- Um relógio por jogador que não reinicia: um lance nos últimos 3 segundos só volta o relógio para 3.
-- Lance máximo controlado, para ninguém ficar sem $1 para cada vaga aberta.
-- Pool de jogadores limitado e aleatório (vagas + 30%, todas as posições garantidas). Esperar um craque é arriscado: quem termina com vaga aberta leva o pior jogador que sobrou.
-- Passe automático, com o motivo na tela, quando falta vaga ou dinheiro. O lote fecha assim que ninguém mais consegue cobrir o maior lance.
-- Modo opcional de **overall escondido**: sem overall nem atributos, só o seu conhecimento de NBA.
-- Jogadores podem ser escalados numa posição vizinha (PG↔SG↔SF↔PF↔C), perdendo um pouco de força.
+## Como foi feito, passo a passo
 
-**Simulação**
-- Cada jogo é 65% força do time e 35% sorte: zebras acontecem, mas o melhor time continua favorito.
-- Estatísticas realistas: placar por quarto, prorrogação, e pontos, rebotes e assistências distribuídos entre os jogadores pelos atributos.
-- Temporada regular todos contra todos, chave no estilo da NBA com folgas, séries de 1, 3 ou 7 jogos com mando 2-2-1-1-1.
-- **Táticas**: estilo de ataque (equilibrado, chuva de 3, garrafão) e ritmo (lento, normal, rápido). Cada uma ajuda ou atrapalha conforme o encaixe com o elenco. As táticas ficam secretas até os jogos.
-- **Editor de escalação**: troca jogadores entre as posições e o banco.
-- Prêmios: campeão, MVP, melhor GM (mais valor por dólar) e maior compra.
+**1. Design antes do código.** Antes de escrever qualquer código, fiz os mockups das três telas principais num canvas de design: criar sala, leilão ao vivo, e temporada e playoffs. Foi aí que a identidade visual se definiu: verde-escuro, a cor do dólar, com a nota de $20 como elemento central. O mascote começou como um urso e virou um **veado macho** bravo, porque "bucks" quer dizer tanto "dólares" quanto "veados machos" em inglês. É um desenho original, feito de propósito para não lembrar nenhum logo de time da NBA.
 
-**Interface**
-- Português, inglês e espanhol, detectados automaticamente e alternáveis.
-- Tema claro e escuro, sem piscar ao carregar.
-- Responsiva e acessível: botões e formulários semânticos, rótulos, regiões ao vivo para relógios e placares, e diálogos com controle de foco.
+**2. Um motor de leilão sem interface.** O primeiro código foram as regras do leilão em TypeScript puro: lances, lance máximo (para ninguém ficar sem dinheiro para as vagas abertas), posições, e bots que avaliam jogadores pelo overall, pelo saldo e pelo que falta no elenco. Toda função recebe um estado e devolve outro, com um gerador aleatório com semente. Assim deu para testar leilões inteiros antes de existir qualquer tela.
+
+**3. Os testes de jogo mudaram as regras.** Cada versão foi jogada e ajustada:
+- Mostrar os próximos jogadores acabava com a tensão, então a fila ficou escondida.
+- O pessoal passava em todo mundo esperando um craque. Agora cada leilão sorteia um pool limitado, e quem termina com vaga aberta leva o *pior* jogador que sobrou.
+- O relógio não reinicia mais a cada lance. Um lance nos últimos 3 segundos só volta o relógio para 3.
+- Quem não tem vaga ou dinheiro passa automaticamente, com um aviso explicando o motivo, e o lote fecha assim que ninguém mais consegue cobrir o maior lance.
+- Modo opcional de **overall escondido**, para os lances dependerem do conhecimento de NBA.
+- Jogadores podem atuar uma posição ao lado da deles (ex.: um SG de PG ou SF), perdendo força.
+
+**4. Uma simulação que dá para explicar.** Para decidir os jogos, escolhi um modelo de probabilidade em vez de um modelo de linguagem: é de graça, instantâneo e controlável. Cada jogo é **65% força do time e 35% sorte**: uma curva logística da diferença de força, misturada com uma moeda. A margem do placar é sorteada de uma distribuição normal ajustada para essa mesma probabilidade, então o placar sempre bate com as chances. Um teste com 4.000 jogos confirma que a taxa de vitória segue a fórmula. Em cima disso vieram jogos ao vivo quarto a quarto, temporada de todos contra todos, chave no estilo da NBA com folgas, séries de 1, 3 ou 7 jogos, MVP e outros prêmios.
+
+**5. Multiplayer.** Um servidor Socket.IO controla o relógio, os bots e as regras, e os clientes só mandam intenções (lance, passar, trocar). As salas ganharam:
+- salas públicas listadas ao vivo na tela inicial, e privadas por link ou código;
+- configurações do dono, botão de pronto e expulsar;
+- **modo ausente**: depois de 45 s parado, um bot marca você como pronto, dá lances por você ou escolhe sua tática;
+- bot no lugar de quem sai;
+- um token secreto no navegador, para recarregar a página sem perder a vaga.
+
+O servidor nunca envia informação escondida: a fila de jogadores, a semente aleatória, a tática dos outros técnicos e os tokens.
+
+**6. Tática e escalação.** Depois do leilão, cada técnico escolhe um estilo de ataque (equilibrado, chuva de 3, garrafão) e um ritmo (lento, normal, rápido). Cada escolha ajuda ou atrapalha conforme o elenco. As referências são as medianas dos atributos dos times em leilões simulados, então cada estilo é bom para mais ou menos metade dos times. Um editor de escalação permite trocar jogadores entre as posições e o banco.
+
+**7. Acabamento.** Português, inglês e espanhol. Tema claro e escuro sem piscar ao carregar. Diálogos, rótulos e regiões ao vivo acessíveis. Várias rodadas de ajuste de espaçamento vindas do uso real.
+
+**8. Clean Architecture.** Com as funcionalidades prontas, reorganizei o código em `domain → application → infrastructure → presentation → app`. Um [teste automático](src/architecture.test.ts) falha se algum arquivo quebrar a regra de dependência.
+
+**9. Colocando no ar.** O site roda na **Vercel** e o servidor das salas no **Render**. O deploy trouxe aprendizados reais:
+- Um `package-lock` desatualizado quebrou a instalação.
+- Arquivos que sobraram de uma renomeação quebraram a checagem de tipos.
+- Um caractere errado na origem permitida causou bloqueio de CORS.
+- O servidor gratuito dorme quando ninguém usa. Agora o site mostra "ligando o servidor…" e reconecta sozinho, em vez de parecer quebrado.
 
 ## Arquitetura
-
-O código segue **Clean Architecture**. As dependências só apontam para dentro, e um [teste automático](src/architecture.test.ts) falha se algum arquivo quebrar essa regra.
 
 ```mermaid
 flowchart LR
@@ -74,83 +83,37 @@ flowchart LR
 | Camada | O que tem lá | Depende de |
 | --- | --- | --- |
 | `domain` | Motor do leilão, bots, regras de posição e escalação, simulação de jogos e campeonato, táticas, prêmios. TypeScript puro, sem pacotes e sem I/O. | nada |
-| `application` | `RoomService`: salas, pronto/expulsar, modo ausente e fases, além da validação de tudo que vem do navegador. Relógio, aleatoriedade e base de jogadores são injetados. | domain |
+| `application` | `RoomService`: salas, pronto/expulsar, modo ausente, fases e validação de tudo que vem do navegador. Relógio, aleatoriedade e dados dos jogadores são injetados. | domain |
 | `infrastructure` | Adaptador do servidor Socket.IO, cliente do socket, storage do navegador, dados dos jogadores. | application, domain |
-| `presentation` | Telas e hooks React, traduções e tema. | todas as internas |
+| `presentation` | Telas e hooks React, traduções, tema. | todas as internas |
 | `app` | Só as rotas do Next.js. | presentation |
-
-### Decisões de projeto
-
-- **Motor puro e determinístico.** Toda função do leilão e da simulação recebe um estado e devolve outro. A semente do gerador aleatório fica dentro do estado, então a mesma semente sempre repete a mesma partida. Isso deixa as regras fáceis de testar e permite rodar exatamente o mesmo código no navegador (modo treino) e no servidor (salas).
-- **O servidor decide.** É o servidor que controla o relógio, os bots e as regras. Os clientes só enviam intenções (lance, passar, trocar) e recebem visões prontas. Todo dado recebido é validado antes de ser usado.
-- **Informação escondida continua escondida.** Os clientes nunca recebem a fila dos próximos jogadores, a semente aleatória, a tática dos outros técnicos nem o token dos outros jogadores. Os testes conferem isso.
-- **Probabilidades que dá para explicar.** A chance de vitória mistura uma curva logística da diferença de força (65%) com uma moeda (35%). A margem do placar é sorteada de uma distribuição normal cuja média vem da inversa da normal acumulada dessa chance, então o placar sempre bate com as probabilidades. Um teste com 4.000 jogos confirma que a taxa de vitória observada segue a fórmula.
-- **Táticas calibradas com dados.** As referências de encaixe são as medianas dos atributos dos times em leilões simulados, então cada estilo ajuda mais ou menos metade dos elencos e atrapalha a outra metade.
-
-## Como rodar
-
-Requisitos: Node.js 20.9+
-
-```bash
-npm install
-npm run dev
-```
-
-O `npm run dev` sobe o site (http://localhost:3000) e o servidor das salas (porta 3001) juntos. Para testar o multiplayer no seu computador, abra o site numa janela normal e numa anônima, crie a sala numa e entre pela outra.
-
-| Script | O que faz |
-| --- | --- |
-| `npm run dev` | Site + servidor das salas com recarga automática |
-| `npm test` | Testes do motor, da simulação, das salas e da arquitetura |
-| `npm run typecheck` | Checagem do TypeScript em modo strict |
-| `npm run build` | Build de produção do site |
-| `npm run start:server` | Servidor das salas em produção |
-
-### Publicar online
-
-O site e o servidor das salas rodam separados:
-
-1. **Servidor das salas**: qualquer hospedagem que mantenha um processo Node.js rodando (Render, Railway, Fly.io…). Comando de início `npm run start:server`, com a variável `CLIENT_ORIGIN` apontando para o endereço do site.
-2. **Site** na Vercel, com a variável `NEXT_PUBLIC_SERVER_URL` apontando para o servidor das salas.
-
-Sem o servidor, o site continua funcionando no modo treino contra bots.
-
-## Estrutura do projeto
 
 ```
 server/index.ts              Ponto de montagem do servidor das salas
 src/
-  domain/
-    auction/                 Motor, regras, bots, pool, posições, escalação
-    simulation/              Probabilidade, jogos, campeonato, táticas, força do time
-    awards/                  Melhor GM, maior compra, rankings
-    shared/rng.ts            Gerador aleatório com semente
+  domain/                    auction/, simulation/, awards/, shared/rng.ts
   application/rooms/         RoomService (casos de uso), DTOs, validação
-  infrastructure/
-    server/                  Adaptador Socket.IO
-    realtime/                Cliente do socket e nomes dos eventos
-    storage/                 Identidade no navegador (token, nome)
-    data/players.ts          Base de jogadores
-  presentation/
-    components/              Telas: início, leilão, tática, campeonato, salas
-    hooks/                   useAuction, useRoom, usePublicRooms, useConnection
-    i18n/                    Textos em PT / EN / ES
-    theme/                   Tema claro / escuro
+  infrastructure/            server/, realtime/, storage/, data/players.ts
+  presentation/              components/, hooks/, i18n/, theme/
   app/                       Rotas do Next.js (/ e /sala/[code])
   architecture.test.ts       Garante a regra de dependência
 ```
+
+## Tecnologias
+
+Next.js 16 · React 19 · TypeScript (strict) · Socket.IO 4 · CSS Modules · test runner nativo do Node com tsx · Vercel (site) · Render (servidor das salas)
 
 ## Próximos passos
 
 - Base de jogadores real, com fotos e ratings calculados a partir de estatísticas reais
 - Bots que arrumam a própria escalação depois do leilão
-- Outros esportes (o motor só depende das posições do basquete em `domain/auction/positions.ts`)
+- Outros esportes
 - Salas persistentes e histórico de partidas
 
 ## Aviso
 
-Projeto de fã feito para aprendizado. Sem vínculo com a NBA, seus times ou a 2K. Os ratings em `src/infrastructure/data/players.ts` são estimativas provisórias, não números oficiais.
+Projeto de fã feito para aprendizado. Sem vínculo com a NBA, seus times ou a 2K. Os ratings dos jogadores são estimativas provisórias, não números oficiais.
 
 ---
 
-Feito por [cardinalipedro](https://github.com/cardinalipedro).
+Feito por [cardinalipedro](https://github.com/cardinalipedro). Eu defini as funcionalidades, desenhei a experiência e testei cada versão jogando, com um assistente de IA (Claude) como par de programação para o código e a refatoração.

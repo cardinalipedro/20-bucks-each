@@ -154,6 +154,12 @@ export function HomeScreen({ onSolo }: HomeScreenProps) {
                 {error}
               </p>
             )}
+            {connection === 'waking' && (
+              <p className={styles.waking} role="status">
+                <span className={styles.spinner} aria-hidden="true" />
+                {t.home.serverWaking}
+              </p>
+            )}
             {connection === 'offline' && <p className={styles.offline}>{t.home.serverOffline}</p>}
 
             <div className={formStyles.buttons}>

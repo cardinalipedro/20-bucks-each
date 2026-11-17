@@ -39,7 +39,13 @@ export function startSocketServer({ service, port, clientOrigin }: SocketServerO
     res.end('20 Bucks Each server');
   });
   const io = new Server(httpServer, {
-    cors: { origin: clientOrigin.split(',') },
+    // Tolerate spaces and a trailing slash in the env var: browsers send the origin without them.
+    cors: {
+      origin: clientOrigin
+        .split(',')
+        .map((origin) => origin.trim().replace(/\/+$/, ''))
+        .filter(Boolean),
+    },
   });
 
   async function broadcastRoom(code: string) {
