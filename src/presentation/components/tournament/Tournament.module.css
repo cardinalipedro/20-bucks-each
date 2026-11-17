@@ -399,6 +399,68 @@
   text-overflow: ellipsis;
 }
 
+/* Season game log */
+.seasonLog {
+  flex: 1 1 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.seasonLog p {
+  margin: 0;
+  font-size: 13px;
+}
+
+.logRounds {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.logRound {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0 12px;
+}
+
+.logRound[open] {
+  padding-bottom: 12px;
+}
+
+.logRoundSummary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Series details (modal) */
+.seriesDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.seriesResult {
+  margin: 0;
+  font-weight: 700;
+}
+
+.leadersTable {
+  min-width: 340px;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
 /* Bracket */
 .bracket {
   min-width: 0;
@@ -423,6 +485,28 @@
 
 .seriesMine {
   border-color: var(--accent);
+}
+
+/* A played series opens its games and leaders. */
+.seriesButton {
+  display: block;
+  width: 100%;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.seriesButton:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+}
+
+.seriesButton:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .seriesRow {

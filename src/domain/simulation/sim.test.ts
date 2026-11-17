@@ -6,7 +6,7 @@ import { createRng } from '@/domain/shared/rng';
 import type { AuctionState } from '@/domain/auction/types';
 import { allocate, simulateGame } from './game';
 import { winProbability } from './probability';
-import { bracketOrder, roundRobin, simulateTournament } from './tournament';
+import { bracketOrder, roundRobin, simulateTournament, topPerformers } from './tournament';
 import { bestTactic, OFFENSE_STYLES, offenseBonus, PACES, paceBonus, teamProfile, type Tactic, type TeamProfile } from './tactics';
 import type { TournamentFormat } from './types';
 
@@ -158,6 +158,15 @@ describe('tournament', () => {
         assert.ok(tournament.mvp);
         if (format === 'seasonOnly') assert.equal(tournament.finalsMvp, null);
         else assert.equal(tournament.finalsMvp?.coachId, tournament.championId, 'finals MVP plays for the champion');
+
+        // Series leaders come only from the two teams of the series, best first.
+        for (const series of tournament.playoffRounds.flatMap((round) => round.series)) {
+          const leaders = topPerformers(series.games, 3);
+          const teams = [series.high.coachId, series.low?.coachId];
+          assert.ok(leaders.every((line) => teams.includes(line.coachId)));
+          assert.ok(leaders.length <= 3);
+          if (series.games.length > 0) assert.equal(leaders[0].games, series.games.length);
+        }
 
         if (format === 'playoffsOnly') assert.equal(tournament.seasonRounds.length, 0);
         else {

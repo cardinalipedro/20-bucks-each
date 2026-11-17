@@ -5,13 +5,13 @@ import { useI18n } from '@/presentation/i18n/I18nProvider';
 import type { AuctionState } from '@/domain/auction/types';
 import { coachLabel } from '@/presentation/format';
 import { standingsAfter } from '@/domain/simulation/tournament';
-import type { GameResult, Tournament } from '@/domain/simulation/types';
+import type { Tournament } from '@/domain/simulation/types';
 import { ExitGameButton } from '@/presentation/components/ExitGame';
 import { Header } from '@/presentation/components/Header';
 import { SyncBar, type SyncControl } from '@/presentation/components/SyncBar';
 import { Awards } from './Awards';
 import { Bracket } from './Bracket';
-import { BoxScore, GameHighlights } from './GameDetails';
+import { GameRow } from './GameDetails';
 import { LiveGame } from './LiveGame';
 import { Standings } from './Standings';
 import styles from './Tournament.module.css';
@@ -172,6 +172,7 @@ export function TournamentScreen({ tournament, auction, humanId, onRestart, sync
             animate={animate && step === seasonRevealed}
             onDone={handleLiveDone}
           />
+          <SeasonLog tournament={tournament} played={seasonInTable} names={names} players={auction.players} />
         </div>
       )}
 
@@ -192,6 +193,7 @@ export function TournamentScreen({ tournament, auction, humanId, onRestart, sync
             revealed={playoffsInBracket}
             nextKnown={step >= seasonCount}
             names={names}
+            players={auction.players}
             humanId={humanId}
           />
         </div>
@@ -305,34 +307,40 @@ function MySeries({ tournament, revealed, names, auction, humanId, animate, onDo
   );
 }
 
-function GameRow({
-  game,
+/** Every season game already played, newest round first: tap one to see who performed. */
+function SeasonLog({
+  tournament,
+  played,
   names,
   players,
-  prefix,
 }: {
-  game: GameResult;
+  tournament: Tournament;
+  played: number;
   names: Record<string, string>;
   players: AuctionState['players'];
-  prefix?: string;
 }) {
-  const homeWon = game.winnerId === game.homeId;
+  const { t } = useI18n();
+  if (played === 0) return null;
+  const rounds = tournament.seasonRounds.slice(0, played).map((round, index) => ({ round, number: index + 1 })).reverse();
+
   return (
-    <li className={styles.gameItem}>
-      <details>
-        <summary className={styles.gameRow}>
-          {prefix && <span className={styles.gamePrefix}>{prefix}</span>}
-          <span className={homeWon ? styles.strong : undefined}>{names[game.homeId]}</span>
-          <span className={styles.gameScore}>
-            {game.homeScore} – {game.awayScore}
-          </span>
-          <span className={homeWon ? undefined : styles.strong}>{names[game.awayId]}</span>
-        </summary>
-        <div className={styles.gameDetails}>
-          <GameHighlights game={game} names={names} players={players} upToPeriod={game.periods.length} />
-          <BoxScore game={game} names={names} players={players} />
-        </div>
-      </details>
-    </li>
+    <section className={`card ${styles.seasonLog}`} aria-labelledby="season-log">
+      <h2 id="season-log" className="eyebrow">
+        {t.tournament.gameLog}
+      </h2>
+      <p className="muted">{t.tournament.gameLogHint}</p>
+      <div className={styles.logRounds}>
+        {rounds.map(({ round, number }) => (
+          <details key={number} className={styles.logRound}>
+            <summary className={styles.logRoundSummary}>{t.tournament.round(number)}</summary>
+            <ul className={styles.gameList}>
+              {round.games.map((game, index) => (
+                <GameRow key={index} game={game} names={names} players={players} />
+              ))}
+            </ul>
+          </details>
+        ))}
+      </div>
+    </section>
   );
 }

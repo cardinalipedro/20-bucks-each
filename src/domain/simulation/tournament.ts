@@ -248,6 +248,13 @@ function impact(stats: PlayerSeasonStats): number {
   return (stats.points + 1.2 * stats.rebounds + 1.5 * stats.assists) / stats.games;
 }
 
+/** Who performed best over some games (a series, a season), best first. */
+export function topPerformers(games: GameResult[], limit: number): PlayerSeasonStats[] {
+  return playerStats(games)
+    .sort((a, b) => impact(b) - impact(a))
+    .slice(0, limit);
+}
+
 /** MVP: best per-game impact over the given games. */
 function pickMvp(games: GameResult[]): PlayerSeasonStats | null {
   return playerStats(games).sort((a, b) => impact(b) - impact(a))[0] ?? null;

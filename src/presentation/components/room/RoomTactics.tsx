@@ -13,10 +13,11 @@ interface RoomTacticsProps {
   now: number;
   onSet: (tactic: Tactic, confirmed: boolean) => void;
   onSwap: (a: number, b: number) => void;
+  hideRatings: boolean;
 }
 
 /** Tactics phase of a room: every change is sent, so the timer never loses a choice. */
-export function RoomTactics({ auction, tactics, coachId, now, onSet, onSwap }: RoomTacticsProps) {
+export function RoomTactics({ auction, tactics, coachId, now, onSet, onSwap, hideRatings }: RoomTacticsProps) {
   const coach = auction.coaches.find((c) => c.id === coachId)!;
   const [tactic, setTactic] = useState<Tactic>(tactics.yours?.tactic ?? DEFAULT_TACTIC);
   const confirmed = tactics.yours?.confirmed ?? false;
@@ -40,6 +41,7 @@ export function RoomTactics({ auction, tactics, coachId, now, onSet, onSwap }: R
       msLeft={tactics.deadline - now}
       readyCount={statuses.filter(Boolean).length}
       totalCount={statuses.length}
+      hideRatings={hideRatings}
     />
   );
 }

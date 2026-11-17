@@ -67,6 +67,7 @@ function LocalGame({ config, onRestart }: { config: GameConfig; onRestart: () =>
         onChange={setTactic}
         onSwap={swap}
         onConfirm={() => setTacticChosen(true)}
+        hideRatings={config.hideOverall}
       />
     );
   }

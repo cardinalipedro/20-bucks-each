@@ -316,3 +316,12 @@
     font-size: 32px;
   }
 }
+
+/* "Hide overall" matches: a note in place of the strength summary. */
+.hiddenNote {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  line-height: 1.5;
+}

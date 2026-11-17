@@ -15,6 +15,7 @@ import {
   type RoomView,
   type TacticChoice,
 } from './types';
+import { stepPlaybackMs } from './playback';
 
 /** No input for this long puts a player in away mode (lobby, auction and tactics). */
 export const AWAY_AFTER_MS = 45_000;
@@ -24,7 +25,7 @@ export const LOBBY_RECONNECT_GRACE_MS = 30_000;
 export const EMPTY_ROOM_TTL_MS = 5 * 60_000;
 /** Time everyone gets to pick a tactic after the auction. */
 export const TACTICS_MS = 60_000;
-/** Each round of the competition waits this long for everyone to be ready. */
+/** After a round has finished playing, everyone gets this long to read it. */
 export const REVEAL_STEP_MS = 10_000;
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -64,6 +65,9 @@ interface Room {
 interface RevealState {
   step: number;
   lastStep: number;
+  /** The live games of this step are still on screen until then. */
+  playingUntil: number;
+  /** Counted from the end of the games, not from the start of the step. */
   deadline: number | null;
   ready: Set<string>;
 }
@@ -345,6 +349,7 @@ export class RoomService {
       room.reveal = {
         step: 0,
         lastStep: tournament.seasonRounds.length + tournament.playoffRounds.length + 1,
+        playingUntil: now,
         deadline: now + REVEAL_STEP_MS,
         ready: new Set(),
       };
@@ -353,16 +358,20 @@ export class RoomService {
     return changed;
   }
 
-  /** Moves everyone to the next round once all are ready, or when time runs out. */
+  /**
+   * Once the games of a round have finished playing, moves everyone on when
+   * all are ready, or when the reading time runs out.
+   */
   private tickReveal(room: Room, now: number): boolean {
     const reveal = room.reveal;
-    if (!reveal || reveal.step >= reveal.lastStep) return false;
+    if (!reveal || reveal.step >= reveal.lastStep || now < reveal.playingUntil) return false;
     const everyoneReady = this.activeMembers(room).every((member) => this.isRevealReady(room, member, now));
     if (!everyoneReady && now < reveal.deadline!) return false;
 
     reveal.step += 1;
     reveal.ready.clear();
-    reveal.deadline = reveal.step >= reveal.lastStep ? null : now + REVEAL_STEP_MS;
+    reveal.playingUntil = now + stepPlaybackMs(room.tournament!, reveal.step);
+    reveal.deadline = reveal.step >= reveal.lastStep ? null : reveal.playingUntil + REVEAL_STEP_MS;
     return true;
   }
 
@@ -450,6 +459,7 @@ export class RoomService {
         ? {
             step: room.reveal.step,
             lastStep: room.reveal.lastStep,
+            playingUntil: room.reveal.playingUntil,
             deadline: room.reveal.deadline,
             youReady: room.reveal.ready.has(you.id),
             readyCount: this.activeMembers(room).filter((m) => this.isRevealReady(room, m, now)).length,

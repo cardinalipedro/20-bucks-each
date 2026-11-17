@@ -267,18 +267,34 @@ describe('rooms', () => {
     assert.equal(reveal.step, 1);
     assert.ok(!reveal.youReady, 'ready resets every round');
 
-    // Nobody ready: the clock moves the room on.
+    // The countdown only starts once the round's games have finished playing.
+    let view = service.view(code, A)!;
+    const playing = view.reveal!.playingUntil - view.serverNow;
+    assert.ok(playing > 0, 'round 1 has live games to watch');
+    assert.equal(view.reveal!.deadline! - view.reveal!.playingUntil, REVEAL_STEP_MS);
+    service.setRevealReady(code, A, true);
+    service.setRevealReady(code, B, true);
+    advance(playing - 250, 250);
+    assert.equal(service.view(code, A)!.reveal!.step, 1, 'nobody skips a game still being played');
+    advance(500, 250);
+    assert.equal(service.view(code, A)!.reveal!.step, 2, 'all ready once the games end: move on');
+
+    // Nobody ready: the clock moves the room on, 10s after the games end.
     service.activity(code, A);
     service.activity(code, B);
-    advance(REVEAL_STEP_MS - 1_000);
-    assert.equal(service.view(code, A)!.reveal!.step, 1);
-    advance(1_500);
+    view = service.view(code, A)!;
+    advance(view.reveal!.deadline! - view.serverNow - 1_000, 500);
     assert.equal(service.view(code, A)!.reveal!.step, 2);
+    advance(1_500, 500);
+    assert.equal(service.view(code, A)!.reveal!.step, 3);
 
     // An away player counts as ready: only Pedro has to click.
     advance(AWAY_AFTER_MS, 5_000);
     service.activity(code, A);
-    const before = service.view(code, A)!.reveal!.step;
+    view = service.view(code, A)!;
+    const before = view.reveal!.step;
+    advance(Math.max(0, view.reveal!.playingUntil - view.serverNow), 250);
+    service.activity(code, A);
     service.setRevealReady(code, A, true);
     advance(250);
     assert.ok(service.view(code, A)!.members.find((m) => m.name === 'Lucas')!.away);

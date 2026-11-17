@@ -4,10 +4,9 @@ import { useEffect, useState } from 'react';
 import { useI18n } from '@/presentation/i18n/I18nProvider';
 import type { Player } from '@/domain/auction/types';
 import type { GameResult } from '@/domain/simulation/types';
+import { PERIOD_REVEAL_MS } from '@/application/rooms/playback';
 import { BoxScore, GameHighlights } from './GameDetails';
 import styles from './Tournament.module.css';
-
-const PERIOD_REVEAL_MS = 800;
 
 interface LiveGameProps {
   game: GameResult;

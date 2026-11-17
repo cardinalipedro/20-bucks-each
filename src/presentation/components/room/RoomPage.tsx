@@ -145,6 +145,7 @@ function RoomScreen({ code, name }: { code: string; name: string }) {
             now={room.now}
             onSet={room.setTactic}
             onSwap={room.swapLineup}
+            hideRatings={view.settings.hideOverall}
           />
           {me.away && <AwayBanner onBack={room.comeBack} />}
         </>

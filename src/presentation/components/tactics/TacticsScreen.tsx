@@ -37,6 +37,11 @@ interface TacticsScreenProps {
   msLeft?: number;
   readyCount?: number;
   totalCount?: number;
+  /**
+   * "Hide overall" matches: no ratings, attributes or tactic effects on screen,
+   * so picking the tactic is a read of the roster, not a math problem.
+   */
+  hideRatings?: boolean;
 }
 
 const PROFILE_KEYS = ['shooting', 'paint', 'athleticism', 'playmaking'] as const;
@@ -62,6 +67,7 @@ export function TacticsScreen({
   msLeft,
   readyCount,
   totalCount,
+  hideRatings = false,
 }: TacticsScreenProps) {
   const { t } = useI18n();
   const profile = useMemo(() => teamProfile(coach, players), [coach, players]);
@@ -119,15 +125,19 @@ export function TacticsScreen({
                     ))}
                   </select>
                   {outOfPosition && (
-                    <span className={styles.outOfPosition} title={t.tactics.outOfPosition}>
-                      −3
+                    <span
+                      className={styles.outOfPosition}
+                      title={hideRatings ? t.tactics.outOfPositionHidden : t.tactics.outOfPosition}
+                    >
+                      {hideRatings ? '!' : '−3'}
                     </span>
                   )}
-                  <span className={styles.ovr}>{player?.overall}</span>
+                  {!hideRatings && <span className={styles.ovr}>{player?.overall}</span>}
                 </li>
               );
             })}
           </ul>
+          {!hideRatings && (
           <div className={styles.profile}>
             {PROFILE_KEYS.map((key) => (
               <div key={key} className={styles.profileRow}>
@@ -141,6 +151,7 @@ export function TacticsScreen({
               </div>
             ))}
           </div>
+          )}
         </section>
 
         <div className={styles.choices}>
@@ -150,7 +161,7 @@ export function TacticsScreen({
               id: offense,
               name: t.tactics.offense[offense].name,
               description: t.tactics.offense[offense].description,
-              fit: fitLevel(offenseBonus(profile, offense)),
+              fit: hideRatings ? null : fitLevel(offenseBonus(profile, offense)),
               selected: tactic.offense === offense,
               onSelect: () => onChange({ ...tactic, offense }),
             }))}
@@ -162,13 +173,19 @@ export function TacticsScreen({
               id: pace,
               name: t.tactics.pace[pace].name,
               description: t.tactics.pace[pace].description,
-              fit: fitLevel(paceBonus(profile, pace)),
+              fit: hideRatings ? null : fitLevel(paceBonus(profile, pace)),
               selected: tactic.pace === pace,
               onSelect: () => onChange({ ...tactic, pace }),
             }))}
             disabled={confirmed}
           />
 
+          {hideRatings ? (
+            <div className={`card ${styles.hiddenNote}`}>
+              <strong>{t.tactics.hiddenTitle}</strong>
+              <span className="muted">{t.tactics.hiddenNote}</span>
+            </div>
+          ) : (
           <div className={`card ${styles.summary}`}>
             <div>
               <span className={styles.summaryLabel}>{t.tactics.rosterStrength}</span>
@@ -185,6 +202,7 @@ export function TacticsScreen({
               <span className={`display ${styles.finalValue}`}>{(base + bonus).toFixed(1)}</span>
             </div>
           </div>
+          )}
 
           {confirmed ? (
             <div className={`card ${styles.waiting}`} role="status">
@@ -216,7 +234,8 @@ interface Option {
   id: string;
   name: string;
   description: string;
-  fit: FitLevel;
+  /** Null when the match hides how well each option fits. */
+  fit: FitLevel | null;
   selected: boolean;
   onSelect: () => void;
 }
@@ -238,7 +257,9 @@ function OptionGroup({ label, options, disabled }: { label: string; options: Opt
           >
             <span className={styles.optionName}>{option.name}</span>
             <span className={styles.optionDescription}>{option.description}</span>
-            <span className={`${styles.fit} ${styles[`fit_${option.fit}`]}`}>{t.tactics.fit[option.fit]}</span>
+            {option.fit && (
+              <span className={`${styles.fit} ${styles[`fit_${option.fit}`]}`}>{t.tactics.fit[option.fit]}</span>
+            )}
           </button>
         ))}
       </div>

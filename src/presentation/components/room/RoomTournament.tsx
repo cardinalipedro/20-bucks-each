@@ -23,6 +23,7 @@ interface RoomTournamentProps {
 export function RoomTournament({ auction, tournament, reveal, humanId, now, onReady, onDone }: RoomTournamentProps) {
   const sync = {
     msLeft: reveal.deadline === null ? null : reveal.deadline - now,
+    playing: now < reveal.playingUntil,
     youReady: reveal.youReady,
     readyCount: reveal.readyCount,
     total: reveal.total,

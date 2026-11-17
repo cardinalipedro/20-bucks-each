@@ -65,6 +65,8 @@ export interface TacticChoice {
 export interface RevealView {
   step: number;
   lastStep: number;
+  /** The round's live games are still playing until then: no countdown yet. */
+  playingUntil: number;
   /** When the room moves on even if not everyone is ready (null on the last step). */
   deadline: number | null;
   youReady: boolean;
