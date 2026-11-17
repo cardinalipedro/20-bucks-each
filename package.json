@@ -3,22 +3,28 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "concurrently -k -n web,server -c green,yellow \"next dev\" \"tsx watch server/index.ts\"",
+    "dev:web": "next dev",
+    "dev:server": "tsx watch server/index.ts",
     "build": "next build",
     "start": "next start",
+    "start:server": "tsx server/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test \"src/**/*.test.ts\""
   },
   "dependencies": {
     "next": "^16.0.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
+    "tsx": "^4.19.0"
   },
   "devDependencies": {
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "tsx": "^4.19.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "concurrently": "^9.1.0"
   }
 }

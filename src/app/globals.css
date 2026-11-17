@@ -93,6 +93,11 @@ select {
 
 /* Buttons */
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-decoration: none;
   min-height: 44px;
   padding: 0 16px;
   border-radius: 10px;

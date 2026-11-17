@@ -1,0 +1,162 @@
+.layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+  padding-top: 40px;
+  align-items: flex-start;
+}
+
+.main {
+  flex: 1 1 560px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.side {
+  flex: 1 1 360px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(40px, 6vw, 56px);
+  line-height: 1.02;
+}
+
+.lead {
+  margin: 14px 0 0;
+  max-width: 560px;
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--text-soft);
+}
+
+.bill {
+  padding: 10px;
+  border-radius: var(--radius);
+  background: var(--bill);
+}
+
+.billInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  border: 2px dashed #7fd3a6;
+  border-radius: 10px;
+}
+
+.billValue {
+  font-size: 64px;
+  line-height: 1;
+  color: var(--bill-light);
+}
+
+.billPortrait {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  border: 3px solid #7fd3a6;
+  background: #0f3a26;
+}
+
+.rules {
+  margin: 14px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-soft);
+}
+
+.formCard {
+  padding: 28px;
+}
+
+.publicSection {
+  margin-top: 40px;
+}
+
+.publicHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.publicTitle {
+  margin: 0;
+  font-size: 32px;
+}
+
+.codeForm {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.codeInput {
+  width: 140px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.roomList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.roomCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+}
+
+.roomInfo {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.roomName {
+  font-size: 16px;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.emptyRooms {
+  margin: 0;
+  color: var(--muted);
+}
+
+.offline {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--warn);
+  color: var(--text-soft);
+  font-size: 14px;
+}

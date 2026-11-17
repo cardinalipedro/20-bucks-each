@@ -8,7 +8,7 @@ import type { Tournament } from '@/lib/sim/types';
 import { AuctionScreen } from './AuctionScreen';
 import { ExitGameProvider } from './ExitGame';
 import { ResultsScreen } from './ResultsScreen';
-import { SetupScreen } from './SetupScreen';
+import { HomeScreen } from './HomeScreen';
 import { TournamentScreen } from './tournament/TournamentScreen';
 
 export function Game() {
@@ -18,8 +18,8 @@ export function Game() {
 
   if (!config) {
     return (
-      <SetupScreen
-        onStart={(nextConfig) => {
+      <HomeScreen
+        onSolo={(nextConfig) => {
           setConfig(nextConfig);
           setGameId((id) => id + 1);
         }}

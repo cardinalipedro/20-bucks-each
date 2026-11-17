@@ -1,0 +1,173 @@
+.centerCard {
+  max-width: 480px;
+  margin: 64px auto 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 20px;
+  text-align: center;
+}
+
+.centerTitle {
+  margin: 0;
+  font-size: 26px;
+}
+
+/* Waiting room */
+.waitingLayout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  padding-top: 32px;
+  align-items: flex-start;
+}
+
+.inviteCard {
+  flex: 1 1 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bigCode {
+  font-size: 64px;
+  line-height: 1;
+  letter-spacing: 6px;
+  color: var(--accent);
+}
+
+.summary {
+  margin: 6px 0 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summary dt {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.summary dd {
+  margin: 2px 0 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.membersCard {
+  flex: 2 1 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.membersHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.membersTitle {
+  margin: 0;
+  font-size: 32px;
+}
+
+.memberList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.member {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--bg);
+  font-size: 14px;
+}
+
+.memberName {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dotOnline,
+.dotOffline {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.dotOffline {
+  background: var(--border-strong);
+}
+
+.badges {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.badge,
+.badgeYou {
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.badge {
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+
+.badgeYou {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.waitingNote {
+  margin: 0;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px dashed var(--border-strong);
+  color: var(--text-soft);
+  text-align: center;
+}
+
+/* Away mode */
+.awayBanner {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 50;
+  width: min(640px, calc(100% - 32px));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 18px 20px;
+  border-radius: var(--radius);
+  border: 1px solid var(--warn);
+  background: var(--surface);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.awayBody {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: var(--text-soft);
+}

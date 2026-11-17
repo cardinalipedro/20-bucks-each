@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { PLAYERS } from '../../data/players';
-import { createAuction, passLot, placeBid, replaceWithBot, tick } from './engine';
+import { createAuction, passLot, placeBid, replaceWithBot, setAutopilot, tick } from './engine';
 import { POOL_FACTOR } from './pool';
 import { maxBid, minNextBid } from './rules';
 import type { AuctionSettings, AuctionState } from './types';
@@ -149,6 +149,25 @@ describe('auction engine', () => {
     const bot = state.coaches.find((c) => c.id === 'coach-1')!;
     assert.ok(bot.roster.every((slot) => slot.playerId));
     assert.ok(SETTINGS.startingCash - bot.cash >= 3, 'the replacement bot kept playing');
+  });
+
+  it('away mode lets a bot play and hands the team back', () => {
+    let state = newGame(3, SETTINGS, 1);
+    state = setAutopilot(state, 'coach-0', true, 1);
+    assert.ok(state.coaches[0].isBot && state.coaches[0].away);
+
+    let now = 1;
+    for (let i = 0; i < 400 && state.phase === 'running'; i++) {
+      now += 250;
+      state = tick(state, now);
+    }
+    const spentWhileAway = SETTINGS.startingCash - state.coaches[0].cash;
+    assert.ok(spentWhileAway > 0, 'the autopilot bought someone');
+
+    state = setAutopilot(state, 'coach-0', false, now);
+    assert.ok(!state.coaches[0].isBot && !state.coaches[0].away);
+    assert.equal(state.botPlans['coach-0'], undefined);
+    assert.equal(SETTINGS.startingCash - state.coaches[0].cash, spentWhileAway, 'money is kept');
   });
 
   it('is deterministic for the same seed', () => {

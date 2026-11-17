@@ -20,7 +20,7 @@ export function slotLabel(kind: SlotKind, t: Messages): string {
 
 /** Bots are named in the current language; ids look like "coach-3". */
 export function coachLabel(coach: Coach, t: Messages): string {
-  if (!coach.isBot) return coach.name;
+  if (!coach.isBot || coach.away) return coach.name;
   if (coach.replacedByBot) return `${coach.name} (bot)`;
   return t.common.botName(Number(coach.id.split('-')[1]));
 }

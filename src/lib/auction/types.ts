@@ -38,6 +38,8 @@ export interface Coach {
   aggressiveness: number;
   /** A human who left the match and is now played by a bot. */
   replacedByBot?: boolean;
+  /** A human who is away: a bot plays for them until they come back. */
+  away?: boolean;
 }
 
 export interface AuctionSettings {

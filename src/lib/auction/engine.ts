@@ -70,17 +70,38 @@ export function passLot(state: AuctionState, coachId: string, now: number): Auct
 }
 
 /**
- * A human left the match: a bot takes over their team, cash and current lot.
+ * A human left the match: a bot takes over their team, cash and current lot for good.
  * Their roster and money are kept, so the room keeps the same number of teams.
  */
 export function replaceWithBot(state: AuctionState, coachId: string, now: number): AuctionState {
   const coach = state.coaches.find((c) => c.id === coachId);
-  if (!coach || coach.isBot) return state;
+  if (!coach || (coach.isBot && !coach.away)) return state;
+  return handToBot(state, coachId, { replacedByBot: true, away: false }, now);
+}
 
+/**
+ * Away mode: a bot plays for an idle human until they come back.
+ * Turning it off gives the team back exactly as the bot left it.
+ */
+export function setAutopilot(state: AuctionState, coachId: string, on: boolean, now: number): AuctionState {
+  const coach = state.coaches.find((c) => c.id === coachId);
+  if (!coach || coach.replacedByBot) return state;
+
+  if (on) {
+    if (coach.isBot) return state;
+    return handToBot(state, coachId, { away: true }, now);
+  }
+
+  if (!coach.away) return state;
+  const coaches = state.coaches.map((c) => (c.id === coachId ? { ...c, isBot: false, away: false } : c));
+  const botPlans = { ...state.botPlans };
+  delete botPlans[coachId];
+  return { ...state, coaches, botPlans };
+}
+
+function handToBot(state: AuctionState, coachId: string, patch: Partial<Coach>, now: number): AuctionState {
   const rng = createRng(state.rngSeed);
-  const coaches = state.coaches.map((c) =>
-    c.id === coachId ? { ...c, isBot: true, replacedByBot: true, aggressiveness: 1 } : c,
-  );
+  const coaches = state.coaches.map((c) => (c.id === coachId ? { ...c, ...patch, isBot: true, aggressiveness: 1 } : c));
   const next: AuctionState = { ...state, coaches };
   if (next.phase !== 'running' || !next.lot) return next;
 

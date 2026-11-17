@@ -225,6 +225,7 @@ function CoachRow({ coach, isYou, state, t }: { coach: Coach; isYou: boolean; st
       <div className={styles.coachHead}>
         <span className={styles.coachName}>{coachLabel(coach, t)}</span>
         {isYou && <span className={styles.youBadge}>{t.common.youBadge}</span>}
+        {coach.away && <span className={styles.awayBadge}>{t.away.badge}</span>}
         <span className={styles.coachCash}>{formatMoney(coach.cash)}</span>
       </div>
       <div className={styles.slots}>

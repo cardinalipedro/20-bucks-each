@@ -2,7 +2,7 @@
 
 Leilão de jogadores da NBA: cada técnico tem $20 pra montar o quinteto mais forte.
 
-**Versão atual:** leilão local contra bots + campeonato simulado (temporada regular, playoffs e prêmios).
+**Versão atual:** salas multiplayer (públicas e privadas) ou treino contra bots, leilão ao vivo e campeonato simulado (temporada regular, playoffs e prêmios).
 
 ## Como rodar
 
@@ -13,7 +13,10 @@ npm install
 npm run dev
 ```
 
-Abra http://localhost:3000.
+O `npm run dev` sobe **duas coisas juntas**: o site (http://localhost:3000) e o servidor das salas (porta 3001).
+Pra testar o multiplayer no seu PC, abra o site em duas janelas diferentes (uma normal e uma anônima), crie a sala numa e entre pela outra.
+
+Se quiser rodar separado: `npm run dev:web` (só o site) e `npm run dev:server` (só o servidor).
 
 Outros comandos:
 
@@ -21,11 +24,13 @@ Outros comandos:
 | --- | --- |
 | `npm test` | Roda os testes do motor do leilão |
 | `npm run typecheck` | Checa os tipos do TypeScript |
-| `npm run build` | Gera a versão de produção |
+| `npm run build` | Gera a versão de produção do site |
+| `npm run start:server` | Roda o servidor das salas em produção |
 
 ## Estrutura
 
 ```
+server/index.ts        Servidor das salas (Socket.IO): só repassa mensagens
 src/
   app/                 Rotas do Next.js (layout, página inicial, CSS global)
   components/          Telas: SetupScreen, AuctionScreen, ResultsScreen, mascote
@@ -46,8 +51,32 @@ src/
     game.ts            Um jogo: placar, quartos e estatísticas dos jogadores
     tournament.ts      Tabela, temporada, playoffs (séries com chaveamento) e MVP
     sim.test.ts        Testes
+  lib/rooms/           Salas (TypeScript puro, testado)
+    service.ts         Criar/entrar/sair, configurações, início, modo ausente, bots substitutos
+    validate.ts        Confere tudo que chega do navegador antes de usar
+    events.ts          Nomes dos eventos entre site e servidor
   components/tournament/  Telas da temporada, chave dos playoffs e prêmios
+  components/room/     Sala de espera, configurações da sala, aviso de ausente
+  app/sala/[code]/     Página de uma sala (/sala/K7Q2M)
 ```
+
+## Salas e modo ausente
+
+- **Pública:** aparece na lista da tela inicial. **Privada:** só entra quem tem o link ou o código.
+- O dono da sala pode mudar visibilidade, limite de técnicos e regras antes de começar (botão Configurações). Se o dono sair, outro jogador vira dono.
+- Vagas vazias viram bots na hora de começar (se a opção estiver ligada).
+- **Ausente:** 45s sem mexer no leilão (mouse, toque ou teclado), ou cair a conexão, e um bot assume seu time. Qualquer movimento ou o botão "Voltar a jogar" devolve o controle (`AWAY_AFTER_MS` em `lib/rooms/service.ts`).
+- Quem **sai** da partida é substituído por um bot de vez.
+- Recarregar a página não tira você da sala: o navegador guarda um token secreto que devolve sua vaga.
+
+## Publicar online
+
+O site e o servidor das salas rodam em lugares diferentes:
+
+1. **Servidor das salas:** qualquer hospedagem que rode Node.js o tempo todo (Render, Railway, Fly.io…). Comando de instalação `npm install`, comando de início `npm run start:server`, e a variável `CLIENT_ORIGIN` com o endereço do site (ex.: `https://20-bucks-each.vercel.app`).
+2. **Site na Vercel:** adicione a variável `NEXT_PUBLIC_SERVER_URL` com o endereço do servidor (ex.: `https://20-bucks-each-server.onrender.com`).
+
+Sem o servidor, o site continua funcionando no modo treino contra bots.
 
 O motor (`lib/auction`) é puro: recebe um estado e devolve um estado novo, sem mexer em nada fora.
 Por isso dá pra testar sem abrir o navegador, e na etapa do multiplayer o mesmo código vai rodar no servidor.
@@ -76,5 +105,5 @@ Por isso dá pra testar sem abrir o navegador, e na etapa do multiplayer o mesmo
 
 2. Ajustes do leilão a partir dos seus testes
 3. ~~Simulação: temporada regular + playoffs~~ ✅
-4. Multiplayer em tempo real (salas com link de convite)
+4. ~~Multiplayer em tempo real (salas com link de convite)~~ ✅
 5. Base de jogadores real e polimento visual
