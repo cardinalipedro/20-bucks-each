@@ -41,6 +41,7 @@ export interface Coach {
 export interface AuctionSettings {
   startingCash: number;
   benchSize: 0 | 2;
+  /** Clock for each player. Bids never reset it, they only extend the final seconds. */
   bidSeconds: number;
 }
 

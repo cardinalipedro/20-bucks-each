@@ -28,3 +28,10 @@
   font-size: 13px;
   color: var(--muted);
 }
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}

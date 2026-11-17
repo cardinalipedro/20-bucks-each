@@ -2,7 +2,9 @@
 
 import { canBidOn, findSlotFor, maxBid, minNextBid, topBid } from '@/lib/auction/rules';
 import type { AuctionState, Coach } from '@/lib/auction/types';
-import { formatMoney, playerInitials, slotLabel } from '@/lib/format';
+import { useI18n } from '@/i18n/I18nProvider';
+import type { Messages } from '@/i18n/messages';
+import { coachLabel, formatMoney, playerInitials, slotLabel } from '@/lib/format';
 import { Header } from './Header';
 import styles from './AuctionScreen.module.css';
 
@@ -18,19 +20,16 @@ const BID_INCREMENTS = [1, 2, 5];
 const RING_RADIUS = 46;
 const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
 
-const RATING_LABELS = [
-  ['shooting', 'Arremesso'],
-  ['finishing', 'Infiltração'],
-  ['playmaking', 'Armação'],
-  ['defense', 'Defesa'],
-  ['rebounding', 'Rebote'],
-  ['athleticism', 'Físico'],
-] as const;
+const RATING_KEYS = ['shooting', 'finishing', 'playmaking', 'defense', 'rebounding', 'athleticism'] as const;
 
 export function AuctionScreen({ state, now, humanId, onBid, onPass }: AuctionScreenProps) {
+  const { t } = useI18n();
   const lot = state.lot;
   const me = state.coaches.find((coach) => coach.id === humanId)!;
-  const coachName = (id: string) => state.coaches.find((coach) => coach.id === id)?.name ?? '?';
+  const coachName = (id: string) => {
+    const coach = state.coaches.find((c) => c.id === id);
+    return coach ? coachLabel(coach, t) : '?';
+  };
 
   if (!lot) return null;
 
@@ -56,9 +55,9 @@ export function AuctionScreen({ state, now, humanId, onBid, onPass }: AuctionScr
 
   return (
     <div className="container">
-      <Header subtitle={`Jogador ${state.lotNumber} · restam ${playersLeft} jogadores para ${openSlots} vagas`}>
+      <Header subtitle={t.auction.progress(state.lotNumber, playersLeft, openSlots)}>
         <div className={styles.balance}>
-          <span className="muted">Seu saldo</span>
+          <span className="muted">{t.auction.balance}</span>
           <span className={`display ${styles.balanceValue}`}>{formatMoney(me.cash)}</span>
         </div>
       </Header>
@@ -66,16 +65,20 @@ export function AuctionScreen({ state, now, humanId, onBid, onPass }: AuctionScr
       {lastResult && (
         <p className={styles.toast} role="status">
           {lastResult.winnerId
-            ? `${state.players[lastResult.playerId].name} foi para ${coachName(lastResult.winnerId)} por ${formatMoney(lastResult.price)}.`
-            : `Ninguém quis ${state.players[lastResult.playerId].name}.`}
+            ? t.auction.soldTo(
+                state.players[lastResult.playerId].name,
+                coachName(lastResult.winnerId),
+                formatMoney(lastResult.price),
+              )
+            : t.auction.unsold(state.players[lastResult.playerId].name)}
         </p>
       )}
 
       <div className={styles.layout}>
-        <section className={`card ${styles.feed}`} aria-label="Lances">
-          <h2 className="eyebrow">Lances</h2>
+        <section className={`card ${styles.feed}`} aria-label={t.auction.bids}>
+          <h2 className="eyebrow">{t.auction.bids}</h2>
           {lot.bids.length === 0 ? (
-            <p className={`muted ${styles.empty}`}>Ninguém deu lance ainda.</p>
+            <p className={`muted ${styles.empty}`}>{t.auction.noBids}</p>
           ) : (
             <ol className={styles.bidList}>
               {[...lot.bids].reverse().map((bid, index) => (
@@ -88,13 +91,13 @@ export function AuctionScreen({ state, now, humanId, onBid, onPass }: AuctionScr
             </ol>
           )}
 
-          <h2 className={`eyebrow ${styles.sectionGap}`}>Seu time</h2>
+          <h2 className={`eyebrow ${styles.sectionGap}`}>{t.auction.myTeam}</h2>
           <ul className={styles.myRoster}>
             {me.roster.map((slot, index) => (
               <li key={index} className={styles.myRosterItem}>
-                <span className={styles.slotTag}>{slotLabel(slot.kind)}</span>
+                <span className={styles.slotTag}>{slotLabel(slot.kind, t)}</span>
                 <span className={slot.playerId ? undefined : 'muted'}>
-                  {slot.playerId ? state.players[slot.playerId].name : 'Vaga aberta'}
+                  {slot.playerId ? state.players[slot.playerId].name : t.auction.openSlot}
                 </span>
                 {slot.playerId && <span className={styles.bidAmount}>{formatMoney(slot.price)}</span>}
               </li>
@@ -109,7 +112,7 @@ export function AuctionScreen({ state, now, humanId, onBid, onPass }: AuctionScr
                 {playerInitials(player.name)}
               </div>
               <div className={styles.playerInfo}>
-                <p className={styles.kicker}>NO LEILÃO AGORA</p>
+                <p className={styles.kicker}>{t.auction.onTheBlock}</p>
                 <h1 id="lot-player" className={`display ${styles.playerName}`}>
                   {player.name}
                 </h1>
@@ -128,10 +131,10 @@ export function AuctionScreen({ state, now, humanId, onBid, onPass }: AuctionScr
             </div>
 
             <div className={styles.ratings}>
-              {RATING_LABELS.map(([key, label]) => (
+              {RATING_KEYS.map((key) => (
                 <div key={key} className={styles.rating}>
                   <div className={styles.ratingHead}>
-                    <span className={styles.ratingLabel}>{label}</span>
+                    <span className={styles.ratingLabel}>{t.auction.ratings[key]}</span>
                     <strong>{player.ratings[key]}</strong>
                   </div>
                   <div className={styles.bar}>
@@ -144,7 +147,7 @@ export function AuctionScreen({ state, now, humanId, onBid, onPass }: AuctionScr
 
           <div className={`card ${styles.bidPanel}`}>
             <div className={styles.timer}>
-              <svg width="112" height="112" viewBox="0 0 112 112" role="img" aria-label={`${secondsLeft} segundos`}>
+              <svg width="112" height="112" viewBox="0 0 112 112" role="img" aria-label={t.auction.secondsLeft(secondsLeft)}>
                 <circle cx="56" cy="56" r={RING_RADIUS} fill="none" stroke="var(--border)" strokeWidth="10" />
                 <circle
                   cx="56"
@@ -163,13 +166,13 @@ export function AuctionScreen({ state, now, humanId, onBid, onPass }: AuctionScr
             </div>
 
             <div className={styles.currentBid} aria-live="polite">
-              <span className="muted">Lance atual</span>
+              <span className="muted">{t.auction.currentBid}</span>
               <div className={styles.currentBidRow}>
                 <span className={`display ${styles.currentBidValue}`}>{top ? formatMoney(top.amount) : '—'}</span>
-                {top && <strong>{iAmTop ? 'Você' : coachName(top.coachId)}</strong>}
+                {top && <strong>{iAmTop ? t.common.you : coachName(top.coachId)}</strong>}
               </div>
               <span className={`muted ${styles.hint}`}>
-                {myBidHint({ iAmTop, iPassed, canBid, myMax, emptySlots, hasSlot: findSlotFor(me, player) !== -1 })}
+                {myBidHint(t, { iAmTop, iPassed, canBid, myMax, emptySlots, hasSlot: findSlotFor(me, player) !== -1 })}
               </span>
             </div>
 
@@ -186,7 +189,7 @@ export function AuctionScreen({ state, now, humanId, onBid, onPass }: AuctionScr
                     onClick={() => onBid(amount)}
                   >
                     +{formatMoney(increment)}
-                    <span className={styles.bidButtonHint}>vai a {formatMoney(amount)}</span>
+                    <span className={styles.bidButtonHint}>{t.auction.goesTo(formatMoney(amount))}</span>
                   </button>
                 );
               })}
@@ -196,17 +199,17 @@ export function AuctionScreen({ state, now, humanId, onBid, onPass }: AuctionScr
                 disabled={iPassed || iAmTop}
                 onClick={onPass}
               >
-                Passar
+                {t.auction.pass}
               </button>
             </div>
           </div>
 
         </section>
 
-        <section className={`card ${styles.coaches}`} aria-label="Técnicos">
-          <h2 className="eyebrow">Técnicos</h2>
+        <section className={`card ${styles.coaches}`} aria-label={t.auction.coaches}>
+          <h2 className="eyebrow">{t.auction.coaches}</h2>
           {state.coaches.map((coach) => (
-            <CoachRow key={coach.id} coach={coach} isYou={coach.id === humanId} state={state} />
+            <CoachRow key={coach.id} coach={coach} isYou={coach.id === humanId} state={state} t={t} />
           ))}
         </section>
       </div>
@@ -214,12 +217,12 @@ export function AuctionScreen({ state, now, humanId, onBid, onPass }: AuctionScr
   );
 }
 
-function CoachRow({ coach, isYou, state }: { coach: Coach; isYou: boolean; state: AuctionState }) {
+function CoachRow({ coach, isYou, state, t }: { coach: Coach; isYou: boolean; state: AuctionState; t: Messages }) {
   return (
     <div className={styles.coach}>
       <div className={styles.coachHead}>
-        <span className={styles.coachName}>{coach.name}</span>
-        {isYou && <span className={styles.youBadge}>VOCÊ</span>}
+        <span className={styles.coachName}>{coachLabel(coach, t)}</span>
+        {isYou && <span className={styles.youBadge}>{t.common.youBadge}</span>}
         <span className={styles.coachCash}>{formatMoney(coach.cash)}</span>
       </div>
       <div className={styles.slots}>
@@ -227,9 +230,9 @@ function CoachRow({ coach, isYou, state }: { coach: Coach; isYou: boolean; state
           <span
             key={index}
             className={slot.playerId ? styles.slotFilled : styles.slotEmpty}
-            title={slot.playerId ? `${state.players[slot.playerId].name} (${formatMoney(slot.price)})` : 'Vaga aberta'}
+            title={slot.playerId ? `${state.players[slot.playerId].name} (${formatMoney(slot.price)})` : t.auction.openSlot}
           >
-            {slotLabel(slot.kind)}
+            {slotLabel(slot.kind, t)}
           </span>
         ))}
       </div>
@@ -246,11 +249,12 @@ interface HintInput {
   hasSlot: boolean;
 }
 
-function myBidHint({ iAmTop, iPassed, canBid, myMax, emptySlots, hasSlot }: HintInput): string {
-  if (emptySlots === 0) return 'Seu time está completo.';
-  if (iAmTop) return 'Você está ganhando. Segura!';
-  if (iPassed && !hasSlot) return 'Você não tem vaga pra essa posição.';
-  if (iPassed) return 'Você está fora desse jogador.';
-  if (!canBid) return 'O preço passou do seu limite.';
-  return `Seu lance máximo: ${formatMoney(myMax)} · faltam ${emptySlots} vagas`;
+function myBidHint(t: Messages, { iAmTop, iPassed, canBid, myMax, emptySlots, hasSlot }: HintInput): string {
+  const hints = t.auction.hints;
+  if (emptySlots === 0) return hints.rosterFull;
+  if (iAmTop) return hints.winning;
+  if (iPassed && !hasSlot) return hints.noSlot;
+  if (iPassed) return hints.out;
+  if (!canBid) return hints.tooExpensive;
+  return hints.maxBid(formatMoney(myMax), emptySlots);
 }
