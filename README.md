@@ -43,14 +43,15 @@ Two things inspired it. One is a video format from American sports creators: eve
 - An optional **hidden ratings** mode, so bids rely on NBA knowledge.
 - Players can line up one position away from their own (e.g. a SG at PG or SF), with a strength penalty.
 
-**4. A simulation you can reason about.** For deciding the games I chose a probability model over an LLM: it is free, instant and controllable. Each game is **65% team strength and 35% luck**: a logistic curve on the rating gap, blended with a coin flip. The score margin is then sampled from a normal distribution tuned to that same probability, so the box score always matches the odds. A 4,000-game test confirms the observed win rate follows the formula. On top of that: quarter-by-quarter live games, round-robin seasons, NBA-style brackets with byes, best-of-1/3/7 series, MVP and other awards.
+**4. A simulation you can reason about.** For deciding the games I chose a probability model over an LLM: it is free, instant and controllable. Each game is **65% team strength and 35% luck**: a logistic curve on the rating gap, blended with a coin flip. The score margin is then sampled from a normal distribution tuned to that same probability, so the box score always matches the odds. A 4,000-game test confirms the observed win rate follows the formula. On top of that: quarter-by-quarter live games with highlights (hot quarters, lead changes, comebacks), full box scores (FG, 3PT, FT, rebounds, assists, steals, blocks) that always add up, round-robin seasons, NBA-style brackets with byes, best-of-1/3/7 series, MVP, Finals MVP and other awards.
 
 **5. Multiplayer.** A Socket.IO server owns the clock, the bots and the rules, and clients only send intentions (bid, pass, swap). The rooms got:
 - public rooms listed live on the home page, and private rooms by link or code;
 - host settings, a ready check and kicking;
 - **away mode**: after 45 s idle, a bot marks you ready, bids for you or picks your tactic;
 - bot replacement for players who leave;
-- a secret browser token, so reloading the page keeps your seat.
+- a secret browser token, so reloading the page keeps your seat;
+- a shared watch party: the whole room moves through the season together, and each round waits up to 10 s for everyone to click ready (away players count as ready).
 
 The server never sends hidden information: the upcoming queue, the random seed, other coaches' tactics or tokens.
 

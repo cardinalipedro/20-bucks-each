@@ -15,6 +15,10 @@
   margin-bottom: 28px;
 }
 
+.sync {
+  margin-bottom: 28px;
+}
+
 .awards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

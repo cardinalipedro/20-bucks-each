@@ -2,7 +2,14 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { createRng } from '@/domain/shared/rng';
 import { PLAYERS } from '@/infrastructure/data/players';
-import { AWAY_AFTER_MS, EMPTY_ROOM_TTL_MS, LOBBY_RECONNECT_GRACE_MS, RoomService, TACTICS_MS } from './RoomService';
+import {
+  AWAY_AFTER_MS,
+  EMPTY_ROOM_TTL_MS,
+  LOBBY_RECONNECT_GRACE_MS,
+  REVEAL_STEP_MS,
+  RoomService,
+  TACTICS_MS,
+} from './RoomService';
 import { DEFAULT_MATCH_SETTINGS, type RoomSettings } from './types';
 import { cleanSettings } from './validation';
 
@@ -228,6 +235,60 @@ describe('rooms', () => {
     advance(30 * 60_000, 1_000);
     assert.equal(service.view(code, A)!.phase, 'tournament');
     assert.ok(TACTICS_MS > 0);
+  });
+
+  it('everyone watches the competition together, one round at a time', () => {
+    const { service, code, advance } = createWithTwo();
+    startMatch(service, code);
+    // Keep both players active until the competition starts.
+    for (let i = 0; i < 20_000 && service.view(code, A)!.phase !== 'tournament'; i++) {
+      advance(500, 500);
+      if (i % 20 === 0) {
+        service.activity(code, A);
+        service.activity(code, B);
+        if (service.view(code, A)!.phase === 'tactics') {
+          service.setTactic(code, A, { offense: 'balanced', pace: 'normal' }, true);
+          service.setTactic(code, B, { offense: 'balanced', pace: 'normal' }, true);
+        }
+      }
+    }
+    let reveal = service.view(code, A)!.reveal!;
+    assert.equal(reveal.step, 0, 'starts on the auction results');
+    assert.equal(reveal.total, 2);
+
+    // Both ready: next round right away.
+    service.setRevealReady(code, A, true);
+    advance(250);
+    assert.equal(service.view(code, A)!.reveal!.step, 0, 'still waiting for Lucas');
+    assert.ok(service.view(code, A)!.reveal!.youReady);
+    service.setRevealReady(code, B, true);
+    advance(250);
+    reveal = service.view(code, A)!.reveal!;
+    assert.equal(reveal.step, 1);
+    assert.ok(!reveal.youReady, 'ready resets every round');
+
+    // Nobody ready: the clock moves the room on.
+    service.activity(code, A);
+    service.activity(code, B);
+    advance(REVEAL_STEP_MS - 1_000);
+    assert.equal(service.view(code, A)!.reveal!.step, 1);
+    advance(1_500);
+    assert.equal(service.view(code, A)!.reveal!.step, 2);
+
+    // An away player counts as ready: only Pedro has to click.
+    advance(AWAY_AFTER_MS, 5_000);
+    service.activity(code, A);
+    const before = service.view(code, A)!.reveal!.step;
+    service.setRevealReady(code, A, true);
+    advance(250);
+    assert.ok(service.view(code, A)!.members.find((m) => m.name === 'Lucas')!.away);
+    assert.equal(service.view(code, A)!.reveal!.step, Math.min(before + 1, reveal.lastStep));
+
+    // It stops on the awards.
+    advance(REVEAL_STEP_MS * (reveal.lastStep + 2), 1_000);
+    reveal = service.view(code, A)!.reveal!;
+    assert.equal(reveal.step, reveal.lastStep);
+    assert.equal(reveal.deadline, null);
   });
 
   it('validates settings sent by clients', () => {

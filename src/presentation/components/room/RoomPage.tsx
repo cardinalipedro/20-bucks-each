@@ -149,8 +149,19 @@ function RoomScreen({ code, name }: { code: string; name: string }) {
           {me.away && <AwayBanner onBack={room.comeBack} />}
         </>
       )}
-      {view.phase === 'tournament' && auction && view.tournament && me.coachId && (
-        <RoomTournament auction={auction} tournament={view.tournament} humanId={me.coachId} onDone={leaveAndGoHome} />
+      {view.phase === 'tournament' && auction && view.tournament && view.reveal && me.coachId && (
+        <>
+          <RoomTournament
+            auction={auction}
+            tournament={view.tournament}
+            reveal={view.reveal}
+            humanId={me.coachId}
+            now={room.now}
+            onReady={room.setRevealReady}
+            onDone={leaveAndGoHome}
+          />
+          {me.away && <AwayBanner onBack={room.comeBack} inLobby />}
+        </>
       )}
     </ExitGameProvider>
   );

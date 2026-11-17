@@ -22,6 +22,8 @@ export function Awards({ tournament, auction, names, humanId }: AwardsProps) {
   const buy = biggestBuy(auction);
   const mvp = tournament.mvp;
   const perGame = (value: number) => (mvp ? (value / mvp.games).toFixed(1) : '0');
+  const finalsMvp = tournament.finalsMvp;
+  const finalsPerGame = (value: number) => (finalsMvp ? (value / finalsMvp.games).toFixed(1) : '0');
 
   return (
     <div className={styles.awardsView}>
@@ -51,6 +53,20 @@ export function Awards({ tournament, auction, names, humanId }: AwardsProps) {
             <span className={`display ${styles.awardValue}`}>{auction.players[mvp.playerId].name}</span>
             <span className="muted">{t.tournament.mvpLine(perGame(mvp.points), perGame(mvp.rebounds), perGame(mvp.assists))}</span>
             <span className="muted">{t.tournament.teamOf(names[mvp.coachId])}</span>
+          </div>
+        )}
+        {finalsMvp && (
+          <div className={`card ${styles.award}`}>
+            <span className={styles.awardLabel}>{t.tournament.finalsMvp}</span>
+            <span className={`display ${styles.awardValue}`}>{auction.players[finalsMvp.playerId].name}</span>
+            <span className="muted">
+              {t.tournament.finalsMvpLine(
+                finalsPerGame(finalsMvp.points),
+                finalsPerGame(finalsMvp.rebounds),
+                finalsPerGame(finalsMvp.assists),
+              )}
+            </span>
+            <span className="muted">{t.tournament.teamOf(names[finalsMvp.coachId])}</span>
           </div>
         )}
         <div className={`card ${styles.award}`}>

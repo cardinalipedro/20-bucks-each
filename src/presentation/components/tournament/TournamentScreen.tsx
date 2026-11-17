@@ -8,8 +8,10 @@ import { standingsAfter } from '@/domain/simulation/tournament';
 import type { GameResult, Tournament } from '@/domain/simulation/types';
 import { ExitGameButton } from '@/presentation/components/ExitGame';
 import { Header } from '@/presentation/components/Header';
+import { SyncBar, type SyncControl } from '@/presentation/components/SyncBar';
 import { Awards } from './Awards';
 import { Bracket } from './Bracket';
+import { BoxScore, GameHighlights } from './GameDetails';
 import { LiveGame } from './LiveGame';
 import { Standings } from './Standings';
 import styles from './Tournament.module.css';
@@ -21,24 +23,42 @@ interface TournamentScreenProps {
   auction: AuctionState;
   humanId: string;
   onRestart: () => void;
+  /** Rooms: the server decides the step and everyone moves on together. */
+  sync?: SyncControl & { step: number };
 }
 
 /**
  * Reveals a pre-simulated competition step by step:
  * one step per season round, one per playoff round, then the awards.
+ * Solo games advance with buttons; rooms follow the server's step.
  */
-export function TournamentScreen({ tournament, auction, humanId, onRestart }: TournamentScreenProps) {
+export function TournamentScreen({ tournament, auction, humanId, onRestart, sync }: TournamentScreenProps) {
   const { t } = useI18n();
   const seasonCount = tournament.seasonRounds.length;
   const playoffCount = tournament.playoffRounds.length;
   const lastStep = seasonCount + playoffCount + 1;
 
-  const [step, setStep] = useState(0);
-  const [tab, setTab] = useState<Tab>(seasonCount > 0 ? 'season' : 'playoffs');
+  const tabForStep = (value: number): Tab =>
+    value === lastStep ? 'awards' : value > seasonCount || seasonCount === 0 ? 'playoffs' : 'season';
+
+  const [localStep, setLocalStep] = useState(0);
+  const step = sync ? sync.step : localStep;
+  const [tab, setTab] = useState<Tab>(tabForStep(step));
   const [animate, setAnimate] = useState(true);
   // While your game is being played live, the tables hold back its result.
-  const [liveDone, setLiveDone] = useState(true);
+  const [liveDone, setLiveDone] = useState(step === 0 || step === lastStep);
   const handleLiveDone = useCallback(() => setLiveDone(true), []);
+
+  // React to a new step during render (not in an effect), so the tables never
+  // flash the result of a game that is about to be played live.
+  const [shownStep, setShownStep] = useState(step);
+  if (step !== shownStep) {
+    const jumped = step - shownStep !== 1;
+    setShownStep(step);
+    setAnimate(!jumped);
+    setLiveDone(jumped || step === lastStep);
+    setTab(tabForStep(step));
+  }
 
   const names = useMemo(
     () => Object.fromEntries(auction.coaches.map((coach) => [coach.id, coachLabel(coach, t)])),
@@ -62,23 +82,8 @@ export function TournamentScreen({ tournament, auction, humanId, onRestart }: To
     [ids, seasonInTable, seasonCount, tournament],
   );
 
-  const tabForStep = (value: number): Tab =>
-    value === lastStep ? 'awards' : value > seasonCount || seasonCount === 0 ? 'playoffs' : 'season';
-
-  const advance = () => {
-    const next = step + 1;
-    setAnimate(true);
-    setLiveDone(next === lastStep);
-    setStep(next);
-    setTab(tabForStep(next));
-  };
-
-  const simulateAll = () => {
-    setAnimate(false);
-    setLiveDone(true);
-    setStep(lastStep);
-    setTab('awards');
-  };
+  const advance = () => setLocalStep((current) => Math.min(lastStep, current + 1));
+  const simulateAll = () => setLocalStep(lastStep);
 
   const nextLabel = (() => {
     if (step < seasonCount) return step === 0 ? t.tournament.startSeason : t.tournament.nextRound;
@@ -135,7 +140,8 @@ export function TournamentScreen({ tournament, auction, humanId, onRestart }: To
               </button>
             ))}
         </nav>
-        {!finished && (
+        {!finished && sync && <SyncBar {...sync} />}
+        {!finished && !sync && (
           <div className={styles.controls}>
             <button type="button" className="btn" onClick={simulateAll}>
               {t.tournament.simulateAll}
@@ -251,7 +257,7 @@ function RoundPanel({ roundIndex, tournament, names, auction, humanId, animate, 
         </h3>
         <ul className={styles.gameList}>
           {others.map((game, index) => (
-            <GameRow key={index} game={game} names={names} />
+            <GameRow key={index} game={game} names={names} players={auction.players} />
           ))}
         </ul>
         {round.byeId && round.byeId !== humanId && <p className="muted">{t.tournament.bye(names[round.byeId])}</p>}
@@ -284,7 +290,13 @@ function MySeries({ tournament, revealed, names, auction, humanId, animate, onDo
         <h3 className="eyebrow">{t.tournament.playoffRoundName(round.series.length)}</h3>
         <ul className={styles.gameList}>
           {series.games.slice(0, -1).map((game, index) => (
-            <GameRow key={index} game={game} names={names} prefix={t.tournament.gameNumber(index + 1)} />
+            <GameRow
+              key={index}
+              game={game}
+              names={names}
+              players={auction.players}
+              prefix={t.tournament.gameNumber(index + 1)}
+            />
           ))}
         </ul>
       </div>
@@ -293,16 +305,34 @@ function MySeries({ tournament, revealed, names, auction, humanId, animate, onDo
   );
 }
 
-function GameRow({ game, names, prefix }: { game: GameResult; names: Record<string, string>; prefix?: string }) {
+function GameRow({
+  game,
+  names,
+  players,
+  prefix,
+}: {
+  game: GameResult;
+  names: Record<string, string>;
+  players: AuctionState['players'];
+  prefix?: string;
+}) {
   const homeWon = game.winnerId === game.homeId;
   return (
-    <li className={styles.gameRow}>
-      {prefix && <span className={styles.gamePrefix}>{prefix}</span>}
-      <span className={homeWon ? styles.strong : undefined}>{names[game.homeId]}</span>
-      <span className={styles.gameScore}>
-        {game.homeScore} – {game.awayScore}
-      </span>
-      <span className={homeWon ? undefined : styles.strong}>{names[game.awayId]}</span>
+    <li className={styles.gameItem}>
+      <details>
+        <summary className={styles.gameRow}>
+          {prefix && <span className={styles.gamePrefix}>{prefix}</span>}
+          <span className={homeWon ? styles.strong : undefined}>{names[game.homeId]}</span>
+          <span className={styles.gameScore}>
+            {game.homeScore} – {game.awayScore}
+          </span>
+          <span className={homeWon ? undefined : styles.strong}>{names[game.awayId]}</span>
+        </summary>
+        <div className={styles.gameDetails}>
+          <GameHighlights game={game} names={names} players={players} upToPeriod={game.periods.length} />
+          <BoxScore game={game} names={names} players={players} />
+        </div>
+      </details>
     </li>
   );
 }

@@ -172,6 +172,12 @@ export function startSocketServer({ service, port, clientOrigin }: SocketServerO
       safeAck(ack)({ ok: true });
     });
 
+    socket.on(CLIENT_EVENTS.revealReady, (payload: { ready?: unknown }) => {
+      if (!data.code) return;
+      service.setRevealReady(data.code, token, payload?.ready);
+      void broadcastRoom(data.code);
+    });
+
     socket.on(CLIENT_EVENTS.lineupSwap, (payload: { a?: unknown; b?: unknown }) => {
       if (!data.code) return;
       service.swapLineup(data.code, token, payload?.a, payload?.b);

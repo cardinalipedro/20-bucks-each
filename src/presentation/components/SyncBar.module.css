@@ -1,0 +1,30 @@
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.status {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.button {
+  min-width: 140px;
+}
+
+@media (max-width: 640px) {
+  .bar {
+    width: 100%;
+  }
+
+  .status {
+    flex: 1 1 100%;
+  }
+
+  .button {
+    flex: 1 1 auto;
+  }
+}

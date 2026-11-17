@@ -1,28 +1,37 @@
 import type { Rng } from '@/domain/shared/rng';
 import type { Coach, Player } from '@/domain/auction/types';
+import { allocate } from './allocate';
+import { buildBoxScore } from './boxScore';
+import { gameEvents } from './events';
 import { inverseNormalCdf, normal, winProbability } from './probability';
-import { PACE_POINTS, type Pace } from './tactics';
-import type { GameResult, PlayerLine } from './types';
+import { PACE_POINTS, type OffenseStyle, type Pace } from './tactics';
+import type { GameResult } from './types';
+
+export { allocate };
 
 const MARGIN_SPREAD = 12;
 const BASE_TOTAL_POINTS = 224;
 const TOTAL_POINTS_SPREAD = 14;
-const BASE_REBOUNDS = 44;
-const ASSIST_RATE = 0.24;
-const BENCH_MINUTES = 0.35;
 
 interface GameContext {
   players: Record<string, Player>;
   ratings: Record<string, number>;
   /** Faster games have more points; missing = normal pace. */
   paces?: Record<string, Pace>;
+  /** Offensive style per team: shapes the shot mix (e.g. more threes). */
+  offenses?: Record<string, OffenseStyle>;
 }
 
 /**
  * Simulates one game. The winner follows `winProbability` (65% strength,
  * 35% luck); the score, quarters and box score are generated around it.
  */
-export function simulateGame(home: Coach, away: Coach, { players, ratings, paces = {} }: GameContext, rng: Rng): GameResult {
+export function simulateGame(
+  home: Coach,
+  away: Coach,
+  { players, ratings, paces = {}, offenses = {} }: GameContext,
+  rng: Rng,
+): GameResult {
   const homeRating = ratings[home.id];
   const awayRating = ratings[away.id];
   const p = winProbability(homeRating, awayRating);
@@ -52,18 +61,20 @@ export function simulateGame(home: Coach, away: Coach, { players, ratings, paces
     for (const period of periods) period.reverse();
   }
 
-  return {
+  const box = {
+    [home.id]: buildBoxScore(home, periods.map(([h]) => h), players, offenses[home.id] ?? 'balanced', rng),
+    [away.id]: buildBoxScore(away, periods.map(([, a]) => a), players, offenses[away.id] ?? 'balanced', rng),
+  };
+  const game = {
     homeId: home.id,
     awayId: away.id,
     homeScore: homeRegulation,
     awayScore: awayRegulation,
     periods,
     winnerId: homeRegulation > awayRegulation ? home.id : away.id,
-    box: {
-      [home.id]: boxScore(home, homeRegulation, players, rng),
-      [away.id]: boxScore(away, awayRegulation, players, rng),
-    },
+    box,
   };
+  return { ...game, events: gameEvents(game) };
 }
 
 function splitIntoQuarters(points: number, rng: Rng): number[] {
@@ -73,52 +84,4 @@ function splitIntoQuarters(points: number, rng: Rng): number[] {
 
 function zip(a: number[], b: number[]): Array<[number, number]> {
   return a.map((value, index) => [value, b[index]]);
-}
-
-/** Splits team totals among the players, weighted by their ratings plus randomness. */
-function boxScore(coach: Coach, points: number, players: Record<string, Player>, rng: Rng): PlayerLine[] {
-  const roster = coach.roster
-    .filter((slot) => slot.playerId)
-    .map((slot) => ({ player: players[slot.playerId!], minutes: slot.kind === 'BENCH' ? BENCH_MINUTES : 1 }));
-
-  const weight = (rating: number, power: number, minutes: number) =>
-    minutes * Math.pow(rating / 100, power) * (0.7 + 0.6 * rng.next());
-
-  const rebounds = Math.max(25, Math.round(BASE_REBOUNDS + 4 * normal(rng)));
-  const assists = Math.round(points * ASSIST_RATE);
-
-  const pointShares = allocate(
-    points,
-    roster.map(({ player, minutes }) => weight((player.ratings.shooting + player.ratings.finishing) / 2, 3, minutes)),
-  );
-  const reboundShares = allocate(
-    rebounds,
-    roster.map(({ player, minutes }) => weight(player.ratings.rebounding, 3, minutes)),
-  );
-  const assistShares = allocate(
-    assists,
-    roster.map(({ player, minutes }) => weight(player.ratings.playmaking, 4, minutes)),
-  );
-
-  return roster.map(({ player }, index) => ({
-    playerId: player.id,
-    points: pointShares[index],
-    rebounds: reboundShares[index],
-    assists: assistShares[index],
-  }));
-}
-
-/** Splits an integer total by weights, keeping the exact sum (largest remainder). */
-export function allocate(total: number, weights: number[]): number[] {
-  const sum = weights.reduce((a, b) => a + b, 0);
-  const raw = weights.map((w) => (w / sum) * total);
-  const result = raw.map(Math.floor);
-  let remainder = total - result.reduce((a, b) => a + b, 0);
-  const order = raw.map((value, index) => ({ index, fraction: value - Math.floor(value) })).sort((a, b) => b.fraction - a.fraction);
-  for (const { index } of order) {
-    if (remainder <= 0) break;
-    result[index] += 1;
-    remainder -= 1;
-  }
-  return result;
 }

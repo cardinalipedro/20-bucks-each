@@ -75,6 +75,51 @@ describe('win probability', () => {
   });
 });
 
+describe('box score and highlights', () => {
+  it('keeps every stat line internally consistent', () => {
+    const { coaches, players } = finishedAuction(2, 2);
+    const [a, b] = coaches;
+    const ratings = { [a.id]: 86, [b.id]: 86 };
+    const rng = createRng(31);
+    for (let i = 0; i < 400; i++) {
+      const game = simulateGame(a, b, { players, ratings, offenses: { [a.id]: 'threes', [b.id]: 'paint' } }, rng);
+      game.periods.forEach(([homePoints], period) => {
+        assert.equal(game.box[a.id].reduce((sum, line) => sum + line.periodPoints[period], 0), homePoints);
+      });
+      for (const line of [...game.box[a.id], ...game.box[b.id]]) {
+        const twos = line.fieldGoalsMade - line.threesMade;
+        assert.equal(2 * twos + 3 * line.threesMade + line.freeThrowsMade, line.points, 'shots add up to points');
+        assert.equal(line.periodPoints.reduce((sum, p) => sum + p, 0), line.points);
+        assert.ok(line.periodPoints.every((p) => p >= 0));
+        assert.ok(twos >= 0 && line.threesMade >= 0 && line.freeThrowsMade >= 0);
+        assert.ok(line.fieldGoalsAttempted >= line.fieldGoalsMade);
+        assert.ok(line.threesAttempted >= line.threesMade);
+        assert.ok(line.freeThrowsAttempted >= line.freeThrowsMade);
+      }
+      for (const event of game.events) {
+        assert.ok(event.period >= 1 && event.period <= game.periods.length);
+      }
+      assert.equal(game.events.at(-1)?.kind, 'gameHigh');
+    }
+  });
+
+  it('a three-point offense takes and makes more threes', () => {
+    const { coaches, players } = finishedAuction(2);
+    const [a, b] = coaches;
+    const ratings = { [a.id]: 85, [b.id]: 85 };
+    const rng = createRng(8);
+    const threes = (offense: 'threes' | 'paint') => {
+      let made = 0;
+      for (let i = 0; i < 200; i++) {
+        const game = simulateGame(a, b, { players, ratings, offenses: { [a.id]: offense } }, rng);
+        made += game.box[a.id].reduce((sum, line) => sum + line.threesMade, 0);
+      }
+      return made / 200;
+    };
+    assert.ok(threes('threes') - threes('paint') > 3);
+  });
+});
+
 describe('scheduling', () => {
   it('allocate keeps the exact total', () => {
     assert.deepEqual(allocate(10, [1, 1, 1]).reduce((a, b) => a + b, 0), 10);
@@ -111,6 +156,8 @@ describe('tournament', () => {
         const ids = new Set(coaches.map((c) => c.id));
         assert.ok(ids.has(tournament.championId));
         assert.ok(tournament.mvp);
+        if (format === 'seasonOnly') assert.equal(tournament.finalsMvp, null);
+        else assert.equal(tournament.finalsMvp?.coachId, tournament.championId, 'finals MVP plays for the champion');
 
         if (format === 'playoffsOnly') assert.equal(tournament.seasonRounds.length, 0);
         else {

@@ -129,6 +129,12 @@ const pt = {
     timeLeft: (time: string) => `Tempo para escolher: ${time}`,
     timeoutNote: 'Se o tempo acabar, vale a tática que estiver marcada.',
   },
+  sync: {
+    status: (seconds: number | null, ready: number, total: number) =>
+      seconds === null ? `${ready}/${total} prontos` : `Próxima etapa em ${seconds}s · ${ready}/${total} prontos`,
+    ready: 'Pronto',
+    cancel: 'Cancelar pronto',
+  },
   exit: {
     leave: 'Sair da partida',
     title: 'Sair da partida?',
@@ -273,6 +279,24 @@ const pt = {
     mvp: 'MVP',
     mvpLine: (points: string, rebounds: string, assists: string) => `${points} pts · ${rebounds} reb · ${assists} ast por jogo`,
     teamOf: (coach: string) => `Time de ${coach}`,
+    finalsMvp: 'MVP DAS FINAIS',
+    finalsMvpLine: (points: string, rebounds: string, assists: string) => `${points} pts · ${rebounds} reb · ${assists} ast por jogo nas finais`,
+    highlights: 'Lances do jogo',
+    boxScore: 'Ver estatísticas completas',
+    columns: { player: 'Jogador', pts: 'PTS', reb: 'REB', ast: 'AST', fg: 'FG', three: '3PT', ft: 'LL', stl: 'ROB', blk: 'TOC' },
+    periodName: (n: number) => (n <= 4 ? `no ${n}º quarto` : 'na prorrogação'),
+    events: {
+      hotPeriod: (player: string, team: string, points: number, period: string) =>
+        `${player} (${team}) fez ${points} pontos ${period}`,
+      bigPeriod: (team: string, margin: number, period: string) => `${team} venceu ${period} por ${margin}`,
+      leadChange: (team: string, home: number, away: number) => `${team} assume a liderança: ${home}–${away}`,
+      overtime: (home: number, away: number) => `Empate em ${home}–${away}: vai para a prorrogação!`,
+      comeback: (team: string, deficit: number) => `Virada! ${team} perdia por ${deficit} depois do 3º quarto`,
+      closeFinish: (team: string, margin: number) => `Decidido no detalhe: ${team} vence por ${margin}`,
+      blowout: (team: string, margin: number) => `Atropelo: ${team} vence por ${margin}`,
+      gameHigh: (player: string, team: string, points: number, rebounds: number, assists: number) =>
+        `Cestinha: ${player} (${team}) com ${points} pts, ${rebounds} reb e ${assists} ast`,
+    },
   },
 };
 
@@ -398,6 +422,12 @@ const en: Messages = {
     waitingOthers: (ready, total) => `Waiting for the other coaches (${ready}/${total} ready)`,
     timeLeft: (time) => `Time to choose: ${time}`,
     timeoutNote: 'If time runs out, the selected tactic is used.',
+  },
+  sync: {
+    status: (seconds, ready, total) =>
+      seconds === null ? `${ready}/${total} ready` : `Next step in ${seconds}s · ${ready}/${total} ready`,
+    ready: 'Ready',
+    cancel: 'Not ready',
   },
   exit: {
     leave: 'Leave game',
@@ -542,6 +572,23 @@ const en: Messages = {
     mvp: 'MVP',
     mvpLine: (points, rebounds, assists) => `${points} pts · ${rebounds} reb · ${assists} ast per game`,
     teamOf: (coach) => `${coach}'s team`,
+    finalsMvp: 'FINALS MVP',
+    finalsMvpLine: (points, rebounds, assists) => `${points} pts · ${rebounds} reb · ${assists} ast per game in the finals`,
+    highlights: 'Game highlights',
+    boxScore: 'Full box score',
+    columns: { player: 'Player', pts: 'PTS', reb: 'REB', ast: 'AST', fg: 'FG', three: '3PT', ft: 'FT', stl: 'STL', blk: 'BLK' },
+    periodName: (n) => (n <= 4 ? `in Q${n}` : 'in overtime'),
+    events: {
+      hotPeriod: (player, team, points, period) => `${player} (${team}) scored ${points} ${period}`,
+      bigPeriod: (team, margin, period) => `${team} won ${period} by ${margin}`,
+      leadChange: (team, home, away) => `${team} takes the lead: ${home}–${away}`,
+      overtime: (home, away) => `Tied at ${home}–${away}: we're going to overtime!`,
+      comeback: (team, deficit) => `Comeback! ${team} was down ${deficit} after three quarters`,
+      closeFinish: (team, margin) => `Down to the wire: ${team} wins by ${margin}`,
+      blowout: (team, margin) => `Blowout: ${team} wins by ${margin}`,
+      gameHigh: (player, team, points, rebounds, assists) =>
+        `Top scorer: ${player} (${team}) with ${points} pts, ${rebounds} reb and ${assists} ast`,
+    },
   },
 };
 
@@ -665,6 +712,12 @@ const es: Messages = {
     waitingOthers: (ready, total) => `Esperando a los otros entrenadores (${ready}/${total} listos)`,
     timeLeft: (time) => `Tiempo para elegir: ${time}`,
     timeoutNote: 'Si se acaba el tiempo, vale la táctica seleccionada.',
+  },
+  sync: {
+    status: (seconds, ready, total) =>
+      seconds === null ? `${ready}/${total} listos` : `Siguiente etapa en ${seconds}s · ${ready}/${total} listos`,
+    ready: 'Listo',
+    cancel: 'Cancelar listo',
   },
   exit: {
     leave: 'Salir de la partida',
@@ -809,6 +862,23 @@ const es: Messages = {
     mvp: 'MVP',
     mvpLine: (points, rebounds, assists) => `${points} pts · ${rebounds} reb · ${assists} ast por partido`,
     teamOf: (coach) => `Equipo de ${coach}`,
+    finalsMvp: 'MVP DE LAS FINALES',
+    finalsMvpLine: (points, rebounds, assists) => `${points} pts · ${rebounds} reb · ${assists} ast por partido en las finales`,
+    highlights: 'Jugadas del partido',
+    boxScore: 'Ver estadísticas completas',
+    columns: { player: 'Jugador', pts: 'PTS', reb: 'REB', ast: 'AST', fg: 'TC', three: 'T3', ft: 'TL', stl: 'ROB', blk: 'TAP' },
+    periodName: (n) => (n <= 4 ? `en el ${n}º cuarto` : 'en la prórroga'),
+    events: {
+      hotPeriod: (player, team, points, period) => `${player} (${team}) anotó ${points} puntos ${period}`,
+      bigPeriod: (team, margin, period) => `${team} ganó ${period} por ${margin}`,
+      leadChange: (team, home, away) => `${team} toma la delantera: ${home}–${away}`,
+      overtime: (home, away) => `Empate a ${home}–${away}: ¡vamos a la prórroga!`,
+      comeback: (team, deficit) => `¡Remontada! ${team} perdía por ${deficit} tras el 3º cuarto`,
+      closeFinish: (team, margin) => `Final ajustado: ${team} gana por ${margin}`,
+      blowout: (team, margin) => `Paliza: ${team} gana por ${margin}`,
+      gameHigh: (player, team, points, rebounds, assists) =>
+        `Máximo anotador: ${player} (${team}) con ${points} pts, ${rebounds} reb y ${assists} ast`,
+    },
   },
 };
 

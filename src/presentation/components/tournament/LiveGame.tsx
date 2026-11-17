@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useI18n } from '@/presentation/i18n/I18nProvider';
 import type { Player } from '@/domain/auction/types';
 import type { GameResult } from '@/domain/simulation/types';
+import { BoxScore, GameHighlights } from './GameDetails';
 import styles from './Tournament.module.css';
 
 const PERIOD_REVEAL_MS = 800;
@@ -96,6 +97,9 @@ export function LiveGame({ game, names, players, animate, label, onDone }: LiveG
           <span>{topScorer(game.awayId)}</span>
         </div>
       )}
+
+      <GameHighlights game={game} names={names} players={players} upToPeriod={revealed} />
+      {isFinal && <BoxScore game={game} names={names} players={players} />}
     </div>
   );
 }

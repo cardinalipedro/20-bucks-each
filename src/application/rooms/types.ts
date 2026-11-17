@@ -57,6 +57,21 @@ export interface TacticChoice {
   confirmed: boolean;
 }
 
+/**
+ * Shared playback of the simulated competition. Step 0 is the auction
+ * results, then one step per season round and playoff round, and the last
+ * step is the awards. Everyone moves on together.
+ */
+export interface RevealView {
+  step: number;
+  lastStep: number;
+  /** When the room moves on even if not everyone is ready (null on the last step). */
+  deadline: number | null;
+  youReady: boolean;
+  readyCount: number;
+  total: number;
+}
+
 /** Tactics phase as each client sees it: your own choice, and only who has confirmed. */
 export interface TacticsView {
   deadline: number;
@@ -79,6 +94,7 @@ export interface RoomView {
   auction: AuctionView | null;
   tactics: TacticsView | null;
   tournament: Tournament | null;
+  reveal: RevealView | null;
   /** Server clock when this view was sent, to sync timers. */
   serverNow: number;
 }

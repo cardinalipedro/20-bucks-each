@@ -68,11 +68,11 @@ export function useRoom(code: string, name: string) {
 
   const view = status.kind === 'ready' ? status.view : null;
   const inAuction = view?.phase === 'auction';
-  // Phases where idle players go "away": everything except watching the results.
-  const tracksPresence = view !== null && view.phase !== 'tournament';
+  // Every phase tracks presence: idle players go "away" and a bot covers for them.
+  const tracksPresence = view !== null;
 
   // Local clock for the auction and tactics timers, corrected by the server's clock.
-  const needsClock = inAuction || view?.phase === 'tactics';
+  const needsClock = inAuction || view?.phase === 'tactics' || view?.phase === 'tournament';
   useEffect(() => {
     if (!needsClock) return;
     const id = window.setInterval(() => setNow(Date.now()), CLOCK_MS);
@@ -112,6 +112,7 @@ export function useRoom(code: string, name: string) {
     kick: (memberId: string) => request(CLIENT_EVENTS.roomKick, { memberId }),
     setTactic: (tactic: Tactic, confirmed: boolean) => getSocket().emit(CLIENT_EVENTS.tacticSet, { tactic, confirmed }),
     swapLineup: (a: number, b: number) => getSocket().emit(CLIENT_EVENTS.lineupSwap, { a, b }),
+    setRevealReady: (ready: boolean) => getSocket().emit(CLIENT_EVENTS.revealReady, { ready }),
     updateSettings: (settings: RoomSettings) => request(CLIENT_EVENTS.roomSettings, { settings }),
     leave: () => request(CLIENT_EVENTS.roomLeave),
   };

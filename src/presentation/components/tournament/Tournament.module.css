@@ -265,14 +265,22 @@
 }
 
 .gameRow {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr);
+  display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
   border-radius: 10px;
   background: var(--bg);
   font-size: 14px;
+}
+
+/* Team names share the space and shorten with an ellipsis; the score never moves. */
+.gameRow > span:not(.gamePrefix):not(.gameScore) {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .gameRow > span:nth-last-child(1) {
@@ -286,8 +294,109 @@
 }
 
 .gameScore {
+  flex: 0 0 auto;
   font-weight: 800;
   white-space: nowrap;
+}
+
+/* Expandable game rows */
+.gameItem {
+  list-style: none;
+}
+
+.gameRow {
+  cursor: pointer;
+  list-style: none;
+}
+
+.gameRow::-webkit-details-marker {
+  display: none;
+}
+
+.gameRow:hover {
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+}
+
+.gameDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 4px 4px;
+}
+
+/* Highlights */
+.highlights {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.highlightList {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-soft);
+}
+
+/* Box score */
+.boxScore {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.boxSummary {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.boxTeam {
+  margin-top: 10px;
+  overflow-x: auto;
+}
+
+.boxTable {
+  width: 100%;
+  min-width: 460px;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.boxTable caption {
+  padding-bottom: 6px;
+  text-align: left;
+  font-weight: 800;
+}
+
+.boxTable th,
+.boxTable td {
+  padding: 6px 6px;
+  border-top: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.boxTable thead th {
+  border-top: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.boxTable th[scope='row'],
+.boxTable thead th:first-child {
+  text-align: left;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Bracket */

@@ -15,7 +15,28 @@ export interface PlayerLine {
   points: number;
   rebounds: number;
   assists: number;
+  steals: number;
+  blocks: number;
+  fieldGoalsMade: number;
+  fieldGoalsAttempted: number;
+  threesMade: number;
+  threesAttempted: number;
+  freeThrowsMade: number;
+  freeThrowsAttempted: number;
+  /** Points scored in each period (same length as GameResult.periods). */
+  periodPoints: number[];
 }
+
+/** A moment worth telling, revealed when its period is played. */
+export type GameEvent =
+  | { kind: 'hotPeriod'; period: number; coachId: string; playerId: string; points: number }
+  | { kind: 'bigPeriod'; period: number; coachId: string; margin: number }
+  | { kind: 'leadChange'; period: number; coachId: string; score: [number, number] }
+  | { kind: 'overtime'; period: number; score: [number, number] }
+  | { kind: 'comeback'; period: number; coachId: string; deficit: number }
+  | { kind: 'closeFinish'; period: number; coachId: string; margin: number }
+  | { kind: 'blowout'; period: number; coachId: string; margin: number }
+  | { kind: 'gameHigh'; period: number; coachId: string; playerId: string; points: number; rebounds: number; assists: number };
 
 export interface GameResult {
   homeId: string;
@@ -26,6 +47,7 @@ export interface GameResult {
   periods: Array<[number, number]>;
   winnerId: string;
   box: Record<string, PlayerLine[]>;
+  events: GameEvent[];
 }
 
 export interface SeasonRound {
@@ -82,4 +104,6 @@ export interface Tournament {
   playoffRounds: PlayoffRound[];
   championId: string;
   mvp: PlayerSeasonStats | null;
+  /** Best player of the champion in the finals (null without playoffs). */
+  finalsMvp: PlayerSeasonStats | null;
 }

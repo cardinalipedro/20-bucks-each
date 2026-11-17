@@ -6,6 +6,7 @@ import { isNaturalPosition } from '@/domain/auction/positions';
 import { amountSpent, bestGm as pickBestGm, biggestBuy as pickBiggestBuy, rankByRating } from '@/domain/awards/awards';
 import { coachLabel, formatMoney, slotLabel } from '@/presentation/format';
 import { teamRating } from '@/domain/simulation/strength';
+import { SyncBar, type SyncControl } from './SyncBar';
 import { ExitGameButton } from './ExitGame';
 import { Header } from './Header';
 import styles from './ResultsScreen.module.css';
@@ -13,11 +14,13 @@ import styles from './ResultsScreen.module.css';
 interface ResultsScreenProps {
   state: AuctionState;
   humanId: string;
-  onContinue: () => void;
-  continueLabel: string;
+  onContinue?: () => void;
+  continueLabel?: string;
+  /** Rooms: instead of a continue button, everyone gets ready together. */
+  sync?: SyncControl;
 }
 
-export function ResultsScreen({ state, humanId, onContinue, continueLabel }: ResultsScreenProps) {
+export function ResultsScreen({ state, humanId, onContinue, continueLabel, sync }: ResultsScreenProps) {
   const { t } = useI18n();
   const { startingCash } = state.settings;
   const ranked = rankByRating(state);
@@ -38,9 +41,15 @@ export function ResultsScreen({ state, humanId, onContinue, continueLabel }: Res
 
       <h1 className={`display ${styles.title}`}>{t.results.title}</h1>
       <p className={`muted ${styles.note}`}>{t.results.note}</p>
-      <button type="button" className={`btn btn-primary btn-big ${styles.continue}`} onClick={onContinue}>
-        {continueLabel}
-      </button>
+      {sync ? (
+        <div className={styles.sync}>
+          <SyncBar {...sync} />
+        </div>
+      ) : (
+        <button type="button" className={`btn btn-primary btn-big ${styles.continue}`} onClick={onContinue}>
+          {continueLabel}
+        </button>
+      )}
 
       <div className={styles.awards}>
         <div className={`card ${styles.award}`}>

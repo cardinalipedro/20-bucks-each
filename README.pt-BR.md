@@ -43,14 +43,15 @@ Duas coisas me inspiraram. Uma é um formato de vídeo de criadores americanos d
 - Modo opcional de **overall escondido**, para os lances dependerem do conhecimento de NBA.
 - Jogadores podem atuar uma posição ao lado da deles (ex.: um SG de PG ou SF), perdendo força.
 
-**4. Uma simulação que dá para explicar.** Para decidir os jogos, escolhi um modelo de probabilidade em vez de um modelo de linguagem: é de graça, instantâneo e controlável. Cada jogo é **65% força do time e 35% sorte**: uma curva logística da diferença de força, misturada com uma moeda. A margem do placar é sorteada de uma distribuição normal ajustada para essa mesma probabilidade, então o placar sempre bate com as chances. Um teste com 4.000 jogos confirma que a taxa de vitória segue a fórmula. Em cima disso vieram jogos ao vivo quarto a quarto, temporada de todos contra todos, chave no estilo da NBA com folgas, séries de 1, 3 ou 7 jogos, MVP e outros prêmios.
+**4. Uma simulação que dá para explicar.** Para decidir os jogos, escolhi um modelo de probabilidade em vez de um modelo de linguagem: é de graça, instantâneo e controlável. Cada jogo é **65% força do time e 35% sorte**: uma curva logística da diferença de força, misturada com uma moeda. A margem do placar é sorteada de uma distribuição normal ajustada para essa mesma probabilidade, então o placar sempre bate com as chances. Um teste com 4.000 jogos confirma que a taxa de vitória segue a fórmula. Em cima disso vieram jogos ao vivo quarto a quarto com lances destacados (quartos quentes, viradas, trocas de liderança), estatísticas completas (arremessos, bolas de 3, lances livres, rebotes, assistências, roubos e tocos) que sempre fecham com o placar, temporada de todos contra todos, chave no estilo da NBA com folgas, séries de 1, 3 ou 7 jogos, MVP, MVP das Finais e outros prêmios.
 
 **5. Multiplayer.** Um servidor Socket.IO controla o relógio, os bots e as regras, e os clientes só mandam intenções (lance, passar, trocar). As salas ganharam:
 - salas públicas listadas ao vivo na tela inicial, e privadas por link ou código;
 - configurações do dono, botão de pronto e expulsar;
 - **modo ausente**: depois de 45 s parado, um bot marca você como pronto, dá lances por você ou escolhe sua tática;
 - bot no lugar de quem sai;
-- um token secreto no navegador, para recarregar a página sem perder a vaga.
+- um token secreto no navegador, para recarregar a página sem perder a vaga;
+- campeonato assistido junto: a sala inteira avança rodada por rodada, e cada rodada espera até 10 s por todos darem pronto (quem está ausente conta como pronto).
 
 O servidor nunca envia informação escondida: a fila de jogadores, a semente aleatória, a tática dos outros técnicos e os tokens.
 

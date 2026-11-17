@@ -44,9 +44,10 @@ export function simulateTournament({ coaches, players, settings, seed, tactics =
     ]),
   );
   const paces = Object.fromEntries(coaches.map((coach) => [coach.id, chosen[coach.id].pace]));
+  const offenses = Object.fromEntries(coaches.map((coach) => [coach.id, chosen[coach.id].offense]));
   const byId = Object.fromEntries(coaches.map((coach) => [coach.id, coach]));
   const play = (homeId: string, awayId: string) =>
-    simulateGame(byId[homeId], byId[awayId], { players, ratings, paces }, rng);
+    simulateGame(byId[homeId], byId[awayId], { players, ratings, paces, offenses }, rng);
 
   const hasSeason = settings.format !== 'playoffsOnly';
   const hasPlayoffs = settings.format !== 'seasonOnly';
@@ -84,6 +85,7 @@ export function simulateTournament({ coaches, players, settings, seed, tactics =
     playoffRounds,
     championId,
     mvp: pickMvp(mvpGames),
+    finalsMvp: playoffRounds.length > 0 ? pickFinalsMvp(playoffRounds.at(-1)!, championId) : null,
   };
 }
 
@@ -241,9 +243,19 @@ export function playerStats(games: GameResult[]): PlayerSeasonStats[] {
   return [...stats.values()];
 }
 
-/** MVP: best all-around per-game impact (points + 1.2 × rebounds + 1.5 × assists). */
+/** All-around impact per game: points + 1.2 × rebounds + 1.5 × assists. */
+function impact(stats: PlayerSeasonStats): number {
+  return (stats.points + 1.2 * stats.rebounds + 1.5 * stats.assists) / stats.games;
+}
+
+/** MVP: best per-game impact over the given games. */
 function pickMvp(games: GameResult[]): PlayerSeasonStats | null {
-  const impact = (s: PlayerSeasonStats) => (s.points + 1.2 * s.rebounds + 1.5 * s.assists) / s.games;
-  const ranked = playerStats(games).sort((a, b) => impact(b) - impact(a));
-  return ranked[0] ?? null;
+  return playerStats(games).sort((a, b) => impact(b) - impact(a))[0] ?? null;
+}
+
+/** Finals MVP: like the NBA, the best player of the team that won the finals. */
+function pickFinalsMvp(finals: PlayoffRound, championId: string): PlayerSeasonStats | null {
+  const games = finals.series.flatMap((series) => series.games);
+  const champions = playerStats(games).filter((stats) => stats.coachId === championId);
+  return champions.sort((a, b) => impact(b) - impact(a))[0] ?? null;
 }

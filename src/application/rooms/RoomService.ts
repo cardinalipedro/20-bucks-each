@@ -24,6 +24,8 @@ export const LOBBY_RECONNECT_GRACE_MS = 30_000;
 export const EMPTY_ROOM_TTL_MS = 5 * 60_000;
 /** Time everyone gets to pick a tactic after the auction. */
 export const TACTICS_MS = 60_000;
+/** Each round of the competition waits this long for everyone to be ready. */
+export const REVEAL_STEP_MS = 10_000;
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const CODE_LENGTH = 5;
@@ -53,9 +55,17 @@ interface Room {
   tactics: Record<string, TacticChoice> | null;
   tacticsDeadline: number | null;
   tournament: Tournament | null;
+  reveal: RevealState | null;
   emptySince: number | null;
   /** Tokens kicked by the host: they cannot come back. */
   banned: Set<string>;
+}
+
+interface RevealState {
+  step: number;
+  lastStep: number;
+  deadline: number | null;
+  ready: Set<string>;
 }
 
 /**
@@ -96,6 +106,7 @@ export class RoomService {
       tactics: null,
       tacticsDeadline: null,
       tournament: null,
+      reveal: null,
       emptySince: null,
       banned: new Set(),
     });
@@ -238,6 +249,16 @@ export class RoomService {
     found.room.auction = swapLineup(found.room.auction!, found.member.coachId!, a, b);
   }
 
+  /** Ready to see the next round of the competition. */
+  setRevealReady(code: string, token: string, ready: unknown) {
+    const room = this.rooms.get(code);
+    const member = room?.members.find((m) => m.token === token && !m.left);
+    if (!room?.reveal || !member || typeof ready !== 'boolean') return;
+    this.markActive(room, member);
+    if (ready) room.reveal.ready.add(member.id);
+    else room.reveal.ready.delete(member.id);
+  }
+
   /** Any input from the player: resets the idle timer and ends away mode. */
   activity(code: string, token: string) {
     const room = this.rooms.get(code);
@@ -261,6 +282,7 @@ export class RoomService {
       if (room.phase === 'lobby') updated = this.tickLobby(room, now);
       else if (room.phase === 'auction') updated = this.tickAuction(room, now);
       else if (room.phase === 'tactics') updated = this.tickTactics(room, now);
+      else if (room.phase === 'tournament') updated = this.tickReveal(room, now);
       if (updated) changed.push(room.code);
     }
     return changed;
@@ -319,9 +341,38 @@ export class RoomService {
         tactics: Object.fromEntries(Object.entries(tactics).map(([id, choice]) => [id, choice.tactic])),
       });
       room.phase = 'tournament';
+      const tournament = room.tournament;
+      room.reveal = {
+        step: 0,
+        lastStep: tournament.seasonRounds.length + tournament.playoffRounds.length + 1,
+        deadline: now + REVEAL_STEP_MS,
+        ready: new Set(),
+      };
       changed = true;
     }
     return changed;
+  }
+
+  /** Moves everyone to the next round once all are ready, or when time runs out. */
+  private tickReveal(room: Room, now: number): boolean {
+    const reveal = room.reveal;
+    if (!reveal || reveal.step >= reveal.lastStep) return false;
+    const everyoneReady = this.activeMembers(room).every((member) => this.isRevealReady(room, member, now));
+    if (!everyoneReady && now < reveal.deadline!) return false;
+
+    reveal.step += 1;
+    reveal.ready.clear();
+    reveal.deadline = reveal.step >= reveal.lastStep ? null : now + REVEAL_STEP_MS;
+    return true;
+  }
+
+  /** Away or disconnected players never hold the room back. */
+  private isRevealReady(room: Room, member: Member, now: number): boolean {
+    return room.reveal!.ready.has(member.id) || !member.connected || this.isIdle(member, now);
+  }
+
+  private isIdle(member: Member, now: number): boolean {
+    return now - member.lastActivity > AWAY_AFTER_MS;
   }
 
   private applyIdleAutopilot(room: Room, auction: AuctionState, now: number): AuctionState {
@@ -361,12 +412,18 @@ export class RoomService {
     const coachAway = (coachId: string | null) =>
       !!(coachId && room.auction?.coaches.find((c) => c.id === coachId)?.away);
 
+    const now = this.deps.now();
+    const awayNow = (m: Member) => {
+      if (room.phase === 'lobby') return m.lobbyAway;
+      if (room.phase === 'tournament') return !m.left && (!m.connected || this.isIdle(m, now));
+      return coachAway(m.coachId);
+    };
     const members: MemberView[] = room.members.map((m) => ({
       id: m.id,
       name: m.name,
       isHost: m.id === room.hostId,
       connected: m.connected,
-      away: room.phase === 'lobby' ? m.lobbyAway : coachAway(m.coachId),
+      away: awayNow(m),
       ready: m.id === room.hostId || m.ready,
       left: m.left,
       coachId: m.coachId,
@@ -389,7 +446,17 @@ export class RoomService {
           }
         : null,
       tournament: room.tournament,
-      serverNow: this.deps.now(),
+      reveal: room.reveal
+        ? {
+            step: room.reveal.step,
+            lastStep: room.reveal.lastStep,
+            deadline: room.reveal.deadline,
+            youReady: room.reveal.ready.has(you.id),
+            readyCount: this.activeMembers(room).filter((m) => this.isRevealReady(room, m, now)).length,
+            total: this.activeMembers(room).length,
+          }
+        : null,
+      serverNow: now,
     };
   }
 
