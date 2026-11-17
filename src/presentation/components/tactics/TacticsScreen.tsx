@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { useI18n } from '@/presentation/i18n/I18nProvider';
 import type { Coach, Player } from '@/domain/auction/types';
 import { canSwap } from '@/domain/auction/lineup';
@@ -70,9 +70,6 @@ export function TacticsScreen({
   hideRatings = false,
 }: TacticsScreenProps) {
   const { t } = useI18n();
-  const profile = useMemo(() => teamProfile(coach, players), [coach, players]);
-  const base = teamRating(coach, players);
-  const bonus = tacticBonus(profile, tactic);
 
   return (
     <div className="container">
@@ -90,145 +87,189 @@ export function TacticsScreen({
         )}
       </div>
 
-      <div className={styles.layout}>
-        <section className={`card ${styles.team}`} aria-labelledby="your-team">
-          <h2 id="your-team" className="eyebrow">
-            {t.tactics.lineupTitle}
-          </h2>
-          <p className={styles.hint}>{t.tactics.lineupHint}</p>
-          <ul className={styles.roster}>
-            {coach.roster.map((slot, index) => {
-              const player = slot.playerId ? players[slot.playerId] : null;
-              const outOfPosition = !!player && slot.kind !== 'BENCH' && !isNaturalPosition(player, slot.kind);
-              // Who can come into this slot: anyone whose swap is valid both ways.
-              const options = coach.roster
-                .map((other, otherIndex) => ({ other, otherIndex }))
-                .filter(({ other, otherIndex }) => other.playerId && (otherIndex === index || canSwap(coach, index, otherIndex, players)));
-              const label = slotLabel(slot.kind, t);
-              return (
-                <li key={index} className={styles.lineupRow}>
-                  <label htmlFor={`slot-${index}`} className={styles.slot}>
-                    {label}
-                  </label>
-                  <select
-                    id={`slot-${index}`}
-                    className={styles.lineupSelect}
-                    value={index}
-                    disabled={confirmed || options.length <= 1}
-                    aria-label={t.tactics.slotLabel(label)}
-                    onChange={(event) => onSwap(index, Number(event.target.value))}
-                  >
-                    {options.map(({ other, otherIndex }) => (
-                      <option key={otherIndex} value={otherIndex}>
-                        {players[other.playerId!].name} ({players[other.playerId!].positions.join('/')})
-                      </option>
-                    ))}
-                  </select>
-                  {outOfPosition && (
-                    <span
-                      className={styles.outOfPosition}
-                      title={hideRatings ? t.tactics.outOfPositionHidden : t.tactics.outOfPosition}
-                    >
-                      {hideRatings ? '!' : '−3'}
-                    </span>
-                  )}
-                  {!hideRatings && <span className={styles.ovr}>{player?.overall}</span>}
-                </li>
-              );
-            })}
-          </ul>
-          {!hideRatings && (
-          <div className={styles.profile}>
-            {PROFILE_KEYS.map((key) => (
-              <div key={key} className={styles.profileRow}>
-                <div className={styles.profileHead}>
-                  <span>{t.tactics.profile[key]}</span>
-                  <strong>{Math.round(profile[key])}</strong>
-                </div>
-                <div className={styles.bar}>
-                  <div className={styles.barFill} style={{ width: `${Math.round(profile[key])}%` }} />
-                </div>
-              </div>
-            ))}
-          </div>
-          )}
-        </section>
-
-        <div className={styles.choices}>
-          <OptionGroup
-            label={t.tactics.offenseLabel}
-            options={OFFENSE_STYLES.map((offense) => ({
-              id: offense,
-              name: t.tactics.offense[offense].name,
-              description: t.tactics.offense[offense].description,
-              fit: hideRatings ? null : fitLevel(offenseBonus(profile, offense)),
-              selected: tactic.offense === offense,
-              onSelect: () => onChange({ ...tactic, offense }),
-            }))}
-            disabled={confirmed}
-          />
-          <OptionGroup
-            label={t.tactics.paceLabel}
-            options={PACES.map((pace) => ({
-              id: pace,
-              name: t.tactics.pace[pace].name,
-              description: t.tactics.pace[pace].description,
-              fit: hideRatings ? null : fitLevel(paceBonus(profile, pace)),
-              selected: tactic.pace === pace,
-              onSelect: () => onChange({ ...tactic, pace }),
-            }))}
-            disabled={confirmed}
-          />
-
-          {hideRatings ? (
-            <div className={`card ${styles.hiddenNote}`}>
-              <strong>{t.tactics.hiddenTitle}</strong>
-              <span className="muted">{t.tactics.hiddenNote}</span>
-            </div>
-          ) : (
-          <div className={`card ${styles.summary}`}>
-            <div>
-              <span className={styles.summaryLabel}>{t.tactics.rosterStrength}</span>
-              <span className={styles.summaryValue}>{base.toFixed(1)}</span>
-            </div>
-            <div>
-              <span className={styles.summaryLabel}>{t.tactics.tacticEffect}</span>
-              <span className={`${styles.summaryValue} ${bonus >= 0 ? styles.positive : styles.negative}`}>
-                {signed(bonus)}
-              </span>
-            </div>
-            <div>
-              <span className={styles.summaryLabel}>{t.tactics.finalStrength}</span>
-              <span className={`display ${styles.finalValue}`}>{(base + bonus).toFixed(1)}</span>
-            </div>
-          </div>
-          )}
-
-          {confirmed ? (
-            <div className={`card ${styles.waiting}`} role="status">
-              <strong>{t.tactics.confirmed}</strong>
-              {readyCount !== undefined && totalCount !== undefined && (
-                <span className="muted">{t.tactics.waitingOthers(readyCount, totalCount)}</span>
-              )}
-              {onUnconfirm && (
-                <button type="button" className="btn" onClick={onUnconfirm}>
-                  {t.tactics.change}
-                </button>
-              )}
-            </div>
-          ) : (
-            <>
-              <button type="button" className="btn btn-primary btn-big" onClick={onConfirm}>
-                {t.tactics.confirm}
+      <TacticsEditor
+        coach={coach}
+        players={players}
+        tactic={tactic}
+        onChange={onChange}
+        onSwap={onSwap}
+        disabled={confirmed}
+        hideRatings={hideRatings}
+      >
+        {confirmed ? (
+          <div className={`card ${styles.waiting}`} role="status">
+            <strong>{t.tactics.confirmed}</strong>
+            {readyCount !== undefined && totalCount !== undefined && (
+              <span className="muted">{t.tactics.waitingOthers(readyCount, totalCount)}</span>
+            )}
+            {onUnconfirm && (
+              <button type="button" className="btn" onClick={onUnconfirm}>
+                {t.tactics.change}
               </button>
-              {msLeft !== undefined && <p className="muted">{t.tactics.timeoutNote}</p>}
-            </>
-          )}
+            )}
+          </div>
+        ) : (
+          <>
+            <button type="button" className="btn btn-primary btn-big" onClick={onConfirm}>
+              {t.tactics.confirm}
+            </button>
+            {msLeft !== undefined && <p className="muted">{t.tactics.timeoutNote}</p>}
+          </>
+        )}
+      </TacticsEditor>
+    </div>
+  );
+}
+
+interface TacticsEditorProps {
+  coach: Coach;
+  players: Record<string, Player>;
+  tactic: Tactic;
+  onChange: (tactic: Tactic) => void;
+  onSwap: (a: number, b: number) => void;
+  disabled?: boolean;
+  hideRatings?: boolean;
+  /** Shown under the options (confirm button, notes). */
+  children?: ReactNode;
+}
+
+/** Lineup, offense and pace: used before the competition and between its games. */
+export function TacticsEditor({
+  coach,
+  players,
+  tactic,
+  onChange,
+  onSwap,
+  disabled = false,
+  hideRatings = false,
+  children,
+}: TacticsEditorProps) {
+  const { t } = useI18n();
+  const confirmed = disabled;
+  const profile = useMemo(() => teamProfile(coach, players), [coach, players]);
+  const base = teamRating(coach, players);
+  const bonus = tacticBonus(profile, tactic);
+
+  return (
+    <div className={styles.layout}>
+      <section className={`card ${styles.team}`} aria-labelledby="your-team">
+        <h2 id="your-team" className="eyebrow">
+          {t.tactics.lineupTitle}
+        </h2>
+        <p className={styles.hint}>{t.tactics.lineupHint}</p>
+        <ul className={styles.roster}>
+          {coach.roster.map((slot, index) => {
+            const player = slot.playerId ? players[slot.playerId] : null;
+            const outOfPosition = !!player && slot.kind !== 'BENCH' && !isNaturalPosition(player, slot.kind);
+            // Who can come into this slot: anyone whose swap is valid both ways.
+            const options = coach.roster
+              .map((other, otherIndex) => ({ other, otherIndex }))
+              .filter(({ other, otherIndex }) => other.playerId && (otherIndex === index || canSwap(coach, index, otherIndex, players)));
+            const label = slotLabel(slot.kind, t);
+            return (
+              <li key={index} className={styles.lineupRow}>
+                <label htmlFor={`slot-${index}`} className={styles.slot}>
+                  {label}
+                </label>
+                <select
+                  id={`slot-${index}`}
+                  className={styles.lineupSelect}
+                  value={index}
+                  disabled={confirmed || options.length <= 1}
+                  aria-label={t.tactics.slotLabel(label)}
+                  onChange={(event) => onSwap(index, Number(event.target.value))}
+                >
+                  {options.map(({ other, otherIndex }) => (
+                    <option key={otherIndex} value={otherIndex}>
+                      {players[other.playerId!].name} ({players[other.playerId!].positions.join('/')})
+                    </option>
+                  ))}
+                </select>
+                {outOfPosition && (
+                  <span
+                    className={styles.outOfPosition}
+                    title={hideRatings ? t.tactics.outOfPositionHidden : t.tactics.outOfPosition}
+                  >
+                    {hideRatings ? '!' : '−3'}
+                  </span>
+                )}
+                {!hideRatings && <span className={styles.ovr}>{player?.overall}</span>}
+              </li>
+            );
+          })}
+        </ul>
+        {!hideRatings && (
+          <div className={styles.profile}>
+          {PROFILE_KEYS.map((key) => (
+            <div key={key} className={styles.profileRow}>
+              <div className={styles.profileHead}>
+                <span>{t.tactics.profile[key]}</span>
+                <strong>{Math.round(profile[key])}</strong>
+              </div>
+              <div className={styles.bar}>
+                <div className={styles.barFill} style={{ width: `${Math.round(profile[key])}%` }} />
+              </div>
+            </div>
+          ))}
         </div>
+        )}
+      </section>
+
+      <div className={styles.choices}>
+        <OptionGroup
+          label={t.tactics.offenseLabel}
+          options={OFFENSE_STYLES.map((offense) => ({
+            id: offense,
+            name: t.tactics.offense[offense].name,
+            description: t.tactics.offense[offense].description,
+            fit: hideRatings ? null : fitLevel(offenseBonus(profile, offense)),
+            selected: tactic.offense === offense,
+            onSelect: () => onChange({ ...tactic, offense }),
+          }))}
+          disabled={confirmed}
+        />
+        <OptionGroup
+          label={t.tactics.paceLabel}
+          options={PACES.map((pace) => ({
+            id: pace,
+            name: t.tactics.pace[pace].name,
+            description: t.tactics.pace[pace].description,
+            fit: hideRatings ? null : fitLevel(paceBonus(profile, pace)),
+            selected: tactic.pace === pace,
+            onSelect: () => onChange({ ...tactic, pace }),
+          }))}
+          disabled={confirmed}
+        />
+
+        {hideRatings ? (
+          <div className={`card ${styles.hiddenNote}`}>
+            <strong>{t.tactics.hiddenTitle}</strong>
+            <span className="muted">{t.tactics.hiddenNote}</span>
+          </div>
+        ) : (
+        <div className={`card ${styles.summary}`}>
+          <div>
+            <span className={styles.summaryLabel}>{t.tactics.rosterStrength}</span>
+            <span className={styles.summaryValue}>{base.toFixed(1)}</span>
+          </div>
+          <div>
+            <span className={styles.summaryLabel}>{t.tactics.tacticEffect}</span>
+            <span className={`${styles.summaryValue} ${bonus >= 0 ? styles.positive : styles.negative}`}>
+              {signed(bonus)}
+            </span>
+          </div>
+          <div>
+            <span className={styles.summaryLabel}>{t.tactics.finalStrength}</span>
+            <span className={`display ${styles.finalValue}`}>{(base + bonus).toFixed(1)}</span>
+          </div>
+        </div>
+        )}
+        {children}
       </div>
     </div>
   );
 }
+
 
 interface Option {
   id: string;

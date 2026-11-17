@@ -172,6 +172,16 @@ export function startSocketServer({ service, port, clientOrigin }: SocketServerO
       safeAck(ack)({ ok: true });
     });
 
+    socket.on(CLIENT_EVENTS.roomPlayAgain, (ack: unknown) => {
+      if (!data.code) return safeAck(ack)({ ok: false, error: 'not_found' });
+      const result = service.playAgain(data.code, token);
+      if (result.ok) {
+        void broadcastRoom(data.code);
+        broadcastLobby();
+      }
+      safeAck(ack)(result);
+    });
+
     socket.on(CLIENT_EVENTS.revealReady, (payload: { ready?: unknown }) => {
       if (!data.code) return;
       service.setRevealReady(data.code, token, payload?.ready);

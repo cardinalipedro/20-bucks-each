@@ -4,12 +4,12 @@ import { useI18n } from '@/presentation/i18n/I18nProvider';
 import type { AuctionState } from '@/domain/auction/types';
 import { amountSpent, bestGm, biggestBuy } from '@/domain/awards/awards';
 import { formatMoney, slotLabel } from '@/presentation/format';
-import type { Tournament } from '@/domain/simulation/types';
+import type { TournamentView } from '@/domain/simulation/types';
 import { DeerMascot } from '@/presentation/components/DeerMascot';
 import styles from './Tournament.module.css';
 
 interface AwardsProps {
-  tournament: Tournament;
+  tournament: TournamentView;
   auction: AuctionState;
   names: Record<string, string>;
   humanId: string;

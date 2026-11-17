@@ -1,6 +1,6 @@
 import type { AuctionState } from '@/domain/auction/types';
 import type { Tactic } from '@/domain/simulation/tactics';
-import type { Tournament, TournamentFormat, TournamentSettings } from '@/domain/simulation/types';
+import type { TournamentFormat, TournamentSettings, TournamentView } from '@/domain/simulation/types';
 
 export const MIN_COACHES = 2;
 export const MAX_COACHES = 16;
@@ -63,11 +63,13 @@ export interface TacticChoice {
  * step is the awards. Everyone moves on together.
  */
 export interface RevealView {
+  /** Steps played so far (0 = still on the auction results). */
   step: number;
-  lastStep: number;
-  /** The round's live games are still playing until then: no countdown yet. */
+  /** The competition is over and the awards are on screen. */
+  awards: boolean;
+  /** The step's live games are still playing until then: no countdown yet. */
   playingUntil: number;
-  /** When the room moves on even if not everyone is ready (null on the last step). */
+  /** When the room moves on even if not everyone is ready (null on the awards). */
   deadline: number | null;
   youReady: boolean;
   readyCount: number;
@@ -76,7 +78,8 @@ export interface RevealView {
 
 /** Tactics phase as each client sees it: your own choice, and only who has confirmed. */
 export interface TacticsView {
-  deadline: number;
+  /** Only during the tactics phase; between games there is no deadline. */
+  deadline: number | null;
   yours: TacticChoice | null;
   confirmed: Record<string, boolean>;
 }
@@ -95,7 +98,8 @@ export interface RoomView {
   youId: string;
   auction: AuctionView | null;
   tactics: TacticsView | null;
-  tournament: Tournament | null;
+  /** Without the random state: nobody can predict the next game. */
+  tournament: TournamentView | null;
   reveal: RevealView | null;
   /** Server clock when this view was sent, to sync timers. */
   serverNow: number;

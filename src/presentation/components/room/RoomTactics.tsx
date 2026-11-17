@@ -38,7 +38,7 @@ export function RoomTactics({ auction, tactics, coachId, now, onSet, onSwap, hid
       onConfirm={() => onSet(tactic, true)}
       confirmed={confirmed}
       onUnconfirm={() => onSet(tactic, false)}
-      msLeft={tactics.deadline - now}
+      msLeft={tactics.deadline === null ? undefined : tactics.deadline - now}
       readyCount={statuses.filter(Boolean).length}
       totalCount={statuses.length}
       hideRatings={hideRatings}

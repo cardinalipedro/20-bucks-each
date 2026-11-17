@@ -11,9 +11,11 @@ interface StandingsProps {
   humanId: string;
   /** Number of teams highlighted as playoff qualifiers (0 = none). */
   qualifiers: number;
+  /** "Hide overall" matches: no strength column (it would give away the tactics). */
+  hideRatings?: boolean;
 }
 
-export function Standings({ standings, names, ratings, humanId, qualifiers }: StandingsProps) {
+export function Standings({ standings, names, ratings, humanId, qualifiers, hideRatings = false }: StandingsProps) {
   const { t } = useI18n();
 
   return (
@@ -39,9 +41,11 @@ export function Standings({ standings, names, ratings, humanId, qualifiers }: St
               <th scope="col" className={`${styles.num} ${styles.optionalColumn}`}>
                 {t.tournament.diff}
               </th>
-              <th scope="col" className={styles.num}>
-                {t.tournament.rating}
-              </th>
+              {!hideRatings && (
+                <th scope="col" className={styles.num}>
+                  {t.tournament.rating}
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -56,7 +60,7 @@ export function Standings({ standings, names, ratings, humanId, qualifiers }: St
                   <td className={`${styles.num} ${styles.strong}`}>{row.wins}</td>
                   <td className={styles.num}>{row.losses}</td>
                   <td className={`${styles.num} ${styles.optionalColumn}`}>{diff > 0 ? `+${diff}` : diff}</td>
-                  <td className={`${styles.num} ${styles.rating}`}>{ratings[row.coachId].toFixed(1)}</td>
+                  {!hideRatings && <td className={`${styles.num} ${styles.rating}`}>{ratings[row.coachId].toFixed(1)}</td>}
                 </tr>
               );
             })}

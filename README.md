@@ -51,11 +51,12 @@ Two things inspired it. One is a video format from American sports creators: eve
 - **away mode**: after 45 s idle, a bot marks you ready, bids for you or picks your tactic;
 - bot replacement for players who leave;
 - a secret browser token, so reloading the page keeps your seat;
-- a shared watch party: the whole room moves through the season together, and each round waits up to 10 s for everyone to click ready (away players count as ready).
+- a shared watch party: the whole room moves through the season together; once a round's games end, everyone gets up to 10 s to read it and click ready (away players count as ready);
+- "play again" brings the same people back to the room's lobby with the same settings.
 
-The server never sends hidden information: the upcoming queue, the random seed, other coaches' tactics or tokens.
+The server never sends hidden information: the upcoming queue, the random seed (the competition is simulated one step at a time on the server, so no one can predict the next game), other coaches' tactics or tokens.
 
-**6. Tactics and lineup.** After the auction, each coach picks an offensive style (balanced, threes, paint) and a pace (slow, normal, fast). Each choice helps or hurts depending on the roster. The thresholds are the median team attributes from simulated auctions, so every style is good for about half of the teams. A lineup editor lets you move players between slots and the bench.
+**6. Tactics and lineup.** After the auction, each coach picks an offensive style (balanced, threes, paint) and a pace (slow, normal, fast). Each choice helps or hurts depending on the roster. The thresholds are the median team attributes from simulated auctions, so every style is good for about half of the teams. A lineup editor lets you move players between slots and the bench. Both can be changed between games: each season round, and each game of a playoff series, is simulated only when it is played, with the tactic and lineup of that moment. In "hide overall" matches the tactic effects are hidden too.
 
 **7. Polish.** Portuguese, English and Spanish. Light and dark themes with no flash on load. Accessible dialogs, labels and live regions. Several rounds of spacing fixes from real use.
 

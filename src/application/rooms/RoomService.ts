@@ -2,8 +2,8 @@ import { createAuction, passLot, placeBid, replaceWithBot, setAutopilot, tick } 
 import { swapLineup } from '@/domain/auction/lineup';
 import type { AuctionState, Player } from '@/domain/auction/types';
 import { bestTactic, DEFAULT_TACTIC, isTactic, teamProfile } from '@/domain/simulation/tactics';
-import { simulateTournament } from '@/domain/simulation/tournament';
-import type { Tournament } from '@/domain/simulation/types';
+import { hasNextGame, playNextStep, startTournament } from '@/domain/simulation/tournament';
+import type { Tournament, TournamentView } from '@/domain/simulation/types';
 import {
   MIN_COACHES,
   type AuctionView,
@@ -15,7 +15,7 @@ import {
   type RoomView,
   type TacticChoice,
 } from './types';
-import { stepPlaybackMs } from './playback';
+import { lastStepPlaybackMs } from './playback';
 
 /** No input for this long puts a player in away mode (lobby, auction and tactics). */
 export const AWAY_AFTER_MS = 45_000;
@@ -63,8 +63,8 @@ interface Room {
 }
 
 interface RevealState {
-  step: number;
-  lastStep: number;
+  /** The competition is over and everyone is on the awards. */
+  awards: boolean;
   /** The live games of this step are still on screen until then. */
   playingUntil: number;
   /** Counted from the end of the games, not from the start of the step. */
@@ -220,6 +220,38 @@ export class RoomService {
     return { ok: true };
   }
 
+  /**
+   * "Play again": the same people go back to this room's lobby, with the same
+   * settings, ready to start a new match. The host decides, unless they are gone.
+   */
+  playAgain(code: string, token: string): Result<object> {
+    const room = this.rooms.get(code);
+    const member = room?.members.find((m) => m.token === token && !m.left);
+    if (!room || !member) return { ok: false, error: 'not_found' };
+    if (room.phase !== 'tournament' || !room.reveal?.awards) return { ok: false, error: 'started' };
+    const now = this.deps.now();
+    const host = room.members.find((m) => m.id === room.hostId);
+    const hostAround = !!host && !host.left && host.connected && !this.isIdle(host, now);
+    if (member.id !== room.hostId && hostAround) return { ok: false, error: 'not_host' };
+
+    room.members = room.members.filter((m) => !m.left);
+    if (member.id !== room.hostId) room.hostId = member.id;
+    for (const m of room.members) {
+      m.coachId = null;
+      m.ready = false;
+      m.lobbyAway = false;
+      m.lastActivity = now;
+      if (!m.connected) m.disconnectedAt = m.disconnectedAt ?? now;
+    }
+    room.phase = 'lobby';
+    room.auction = null;
+    room.tactics = null;
+    room.tacticsDeadline = null;
+    room.tournament = null;
+    room.reveal = null;
+    return { ok: true };
+  }
+
   // -------------------------------------------------------------------------
   // Match actions
   // -------------------------------------------------------------------------
@@ -238,16 +270,17 @@ export class RoomService {
     found.room.auction = passLot(found.room.auction!, found.member.coachId!, this.deps.now());
   }
 
+  /** Before the competition, or between its games (the change counts from the next game). */
   setTactic(code: string, token: string, tactic: unknown, confirmed: unknown) {
-    const found = this.playing(code, token, 'tactics');
+    const found = this.playing(code, token, 'tactics') ?? this.betweenGames(code, token);
     if (!found || !isTactic(tactic) || typeof confirmed !== 'boolean') return;
     this.markActive(found.room, found.member);
     found.room.tactics![found.member.coachId!] = { tactic, confirmed };
   }
 
-  /** Moves players between roster slots during the tactics phase. */
+  /** Moves players between roster slots, before the competition or between its games. */
   swapLineup(code: string, token: string, a: unknown, b: unknown) {
-    const found = this.playing(code, token, 'tactics');
+    const found = this.playing(code, token, 'tactics') ?? this.betweenGames(code, token);
     if (!found) return;
     this.markActive(found.room, found.member);
     found.room.auction = swapLineup(found.room.auction!, found.member.coachId!, a, b);
@@ -337,42 +370,53 @@ export class RoomService {
 
     const allConfirmed = Object.values(tactics).every((choice) => choice.confirmed);
     if (allConfirmed || now >= room.tacticsDeadline!) {
-      room.tournament = simulateTournament({
+      room.tournament = startTournament({
         coaches: auction.coaches,
         players: auction.players,
         settings: room.settings.tournament,
         seed: auction.rngSeed,
-        tactics: Object.fromEntries(Object.entries(tactics).map(([id, choice]) => [id, choice.tactic])),
+        tactics: this.humanTactics(room),
       });
       room.phase = 'tournament';
-      const tournament = room.tournament;
-      room.reveal = {
-        step: 0,
-        lastStep: tournament.seasonRounds.length + tournament.playoffRounds.length + 1,
-        playingUntil: now,
-        deadline: now + REVEAL_STEP_MS,
-        ready: new Set(),
-      };
+      room.reveal = { awards: false, playingUntil: now, deadline: now + REVEAL_STEP_MS, ready: new Set() };
       changed = true;
     }
     return changed;
   }
 
   /**
-   * Once the games of a round have finished playing, moves everyone on when
-   * all are ready, or when the reading time runs out.
+   * Once the games of a step have finished playing, moves everyone on when all
+   * are ready, or when the reading time runs out. Each step is simulated only
+   * now, with the tactics and lineups as they are at this moment.
    */
   private tickReveal(room: Room, now: number): boolean {
     const reveal = room.reveal;
-    if (!reveal || reveal.step >= reveal.lastStep || now < reveal.playingUntil) return false;
+    if (!reveal || reveal.awards || now < reveal.playingUntil) return false;
     const everyoneReady = this.activeMembers(room).every((member) => this.isRevealReady(room, member, now));
     if (!everyoneReady && now < reveal.deadline!) return false;
 
-    reveal.step += 1;
     reveal.ready.clear();
-    reveal.playingUntil = now + stepPlaybackMs(room.tournament!, reveal.step);
-    reveal.deadline = reveal.step >= reveal.lastStep ? null : reveal.playingUntil + REVEAL_STEP_MS;
+    if (room.tournament!.finished) {
+      reveal.awards = true;
+      reveal.deadline = null;
+      return true;
+    }
+    room.tournament = playNextStep(room.tournament!, {
+      coaches: room.auction!.coaches,
+      players: room.auction!.players,
+      tactics: this.humanTactics(room),
+    });
+    reveal.playingUntil = now + lastStepPlaybackMs(room.tournament);
+    reveal.deadline = reveal.playingUntil + REVEAL_STEP_MS;
     return true;
+  }
+
+  /** Tactics picked by people; bots (and players replaced by bots) pick their own. */
+  private humanTactics(room: Room) {
+    const auction = room.auction!;
+    return Object.fromEntries(
+      auction.coaches.filter((coach) => !coach.isBot).map((coach) => [coach.id, room.tactics![coach.id].tactic]),
+    );
   }
 
   /** Away or disconnected players never hold the room back. */
@@ -438,7 +482,7 @@ export class RoomService {
       coachId: m.coachId,
     }));
 
-    const tactics = room.phase === 'tactics' ? room.tactics : null;
+    const tactics = room.phase === 'tactics' || room.phase === 'tournament' ? room.tactics : null;
     return {
       code: room.code,
       phase: room.phase,
@@ -448,17 +492,17 @@ export class RoomService {
       auction: room.auction ? toAuctionView(room.auction) : null,
       tactics: tactics
         ? {
-            deadline: room.tacticsDeadline!,
+            deadline: room.phase === 'tactics' ? room.tacticsDeadline! : null,
             yours: you.coachId ? tactics[you.coachId] : null,
             // Other coaches' choices stay secret until the games are played.
             confirmed: Object.fromEntries(Object.entries(tactics).map(([id, choice]) => [id, choice.confirmed])),
           }
         : null,
-      tournament: room.tournament,
+      tournament: room.tournament ? publicTournament(room.tournament) : null,
       reveal: room.reveal
         ? {
-            step: room.reveal.step,
-            lastStep: room.reveal.lastStep,
+            step: room.tournament!.steps.length,
+            awards: room.reveal.awards,
             playingUntil: room.reveal.playingUntil,
             deadline: room.reveal.deadline,
             youReady: room.reveal.ready.has(you.id),
@@ -570,6 +614,13 @@ export class RoomService {
     return { room, member };
   }
 
+  /** A coach who still has a game to play in the competition. */
+  private betweenGames(code: string, token: string) {
+    const found = this.playing(code, token, 'tournament');
+    if (!found || !hasNextGame(found.room.tournament!, found.member.coachId!)) return null;
+    return found;
+  }
+
   private markActive(room: Room, member: Member) {
     member.lastActivity = this.deps.now();
     member.lobbyAway = false;
@@ -623,4 +674,10 @@ function toAuctionView(state: AuctionState): AuctionView {
     lotNumber: state.lotNumber,
     queueLength: state.queue.length,
   };
+}
+
+/** The competition without its random state, so no client can predict a game. */
+function publicTournament(tournament: Tournament): TournamentView {
+  const { rngState, ...view } = tournament;
+  return view;
 }

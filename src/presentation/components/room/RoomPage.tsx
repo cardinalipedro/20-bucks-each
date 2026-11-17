@@ -105,6 +105,10 @@ function RoomScreen({ code, name }: { code: string; name: string }) {
   const { view, auction, me } = room;
   if (!view || !me) return null;
 
+  // The host restarts the match; if they are gone or away, anyone can.
+  const host = view.members.find((member) => member.isHost);
+  const canRestart = me.isHost || !host || host.left || !host.connected || host.away;
+
   if (view.phase === 'lobby') {
     return (
       <WaitingRoom
@@ -156,10 +160,15 @@ function RoomScreen({ code, name }: { code: string; name: string }) {
             auction={auction}
             tournament={view.tournament}
             reveal={view.reveal}
+            tactics={view.tactics}
             humanId={me.coachId}
             now={room.now}
+            hideRatings={view.settings.hideOverall}
+            canRestart={canRestart}
             onReady={room.setRevealReady}
-            onDone={leaveAndGoHome}
+            onTactic={room.setTactic}
+            onSwap={room.swapLineup}
+            onPlayAgain={() => void room.playAgain()}
           />
           {me.away && <AwayBanner onBack={room.comeBack} inLobby />}
         </>

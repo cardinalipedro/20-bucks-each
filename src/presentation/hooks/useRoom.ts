@@ -114,6 +114,7 @@ export function useRoom(code: string, name: string) {
     swapLineup: (a: number, b: number) => getSocket().emit(CLIENT_EVENTS.lineupSwap, { a, b }),
     setRevealReady: (ready: boolean) => getSocket().emit(CLIENT_EVENTS.revealReady, { ready }),
     updateSettings: (settings: RoomSettings) => request(CLIENT_EVENTS.roomSettings, { settings }),
+    playAgain: () => request(CLIENT_EVENTS.roomPlayAgain),
     leave: () => request(CLIENT_EVENTS.roomLeave),
   };
 }

@@ -76,7 +76,8 @@ export interface Series {
   games: GameResult[];
   highWins: number;
   lowWins: number;
-  winnerId: string;
+  /** null while the series is still being played. */
+  winnerId: string | null;
 }
 
 export interface PlayoffRound {
@@ -92,18 +93,49 @@ export interface PlayerSeasonStats {
   assists: number;
 }
 
-export interface Tournament {
+/** A season round in the schedule, before it is played. */
+export interface ScheduledRound {
+  pairs: Array<[string, string]>;
+  /** Team that sits out this round when the number of teams is odd. */
+  byeId: string | null;
+}
+
+/** What one step of the competition played: a season round, or one game of every open playoff series. */
+export type TournamentStep =
+  | { kind: 'season'; round: number }
+  | { kind: 'playoffs'; round: number; game: number };
+
+/**
+ * The competition as everyone may see it. It is played one step at a time, so
+ * coaches can change their tactic and lineup between games.
+ */
+export interface TournamentView {
   settings: TournamentSettings;
-  /** Team rating used by the simulation, per coach (roster + tactic). */
+  coachIds: string[];
+  /** The full regular-season schedule (public from the start). */
+  schedule: ScheduledRound[];
+  /** Team rating used in the last step, per coach (roster + tactic). */
   ratings: Record<string, number>;
-  /** Roster-only rating, before the tactic. */
+  /** Roster-only rating used in the last step, before the tactic. */
   baseRatings: Record<string, number>;
+  /** Tactics used in the last step. */
   tactics: Record<string, Tactic>;
+  /** Season rounds played so far. */
   seasonRounds: SeasonRound[];
-  finalStandings: Standing[];
+  /** Current regular-season table (or seeding order without a season). */
+  standings: Standing[];
+  /** Playoff rounds known so far; the last one may still be in progress. */
   playoffRounds: PlayoffRound[];
-  championId: string;
+  /** Every step played, in order. */
+  steps: TournamentStep[];
+  finished: boolean;
+  championId: string | null;
   mvp: PlayerSeasonStats | null;
   /** Best player of the champion in the finals (null without playoffs). */
   finalsMvp: PlayerSeasonStats | null;
+}
+
+/** Full state, including the random generator: stays on the server so nobody can predict a game. */
+export interface Tournament extends TournamentView {
+  rngState: number;
 }

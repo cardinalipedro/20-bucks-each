@@ -237,8 +237,10 @@ describe('rooms', () => {
     assert.ok(TACTICS_MS > 0);
   });
 
-  it('everyone watches the competition together, one round at a time', () => {
-    const { service, code, advance } = createWithTwo();
+  /** Starts a match and gets both players through the auction and tactics. */
+  function toCompetition() {
+    const env = createWithTwo();
+    const { service, code, advance } = env;
     startMatch(service, code);
     // Keep both players active until the competition starts.
     for (let i = 0; i < 20_000 && service.view(code, A)!.phase !== 'tournament'; i++) {
@@ -252,23 +254,30 @@ describe('rooms', () => {
         }
       }
     }
-    let reveal = service.view(code, A)!.reveal!;
-    assert.equal(reveal.step, 0, 'starts on the auction results');
-    assert.equal(reveal.total, 2);
+    return env;
+  }
 
-    // Both ready: next round right away.
+  it('everyone watches the competition together, one step at a time', () => {
+    const { service, code, advance } = toCompetition();
+    let view = service.view(code, A)!;
+    assert.equal(view.reveal!.step, 0, 'starts on the auction results');
+    assert.equal(view.tournament!.steps.length, 0, 'nothing is simulated in advance');
+    assert.equal(view.reveal!.total, 2);
+    assert.ok(!('rngState' in view.tournament!), 'nobody can predict the games');
+
+    // Both ready: the first round is played right away.
     service.setRevealReady(code, A, true);
     advance(250);
     assert.equal(service.view(code, A)!.reveal!.step, 0, 'still waiting for Lucas');
     assert.ok(service.view(code, A)!.reveal!.youReady);
     service.setRevealReady(code, B, true);
     advance(250);
-    reveal = service.view(code, A)!.reveal!;
-    assert.equal(reveal.step, 1);
-    assert.ok(!reveal.youReady, 'ready resets every round');
+    view = service.view(code, A)!;
+    assert.equal(view.reveal!.step, 1);
+    assert.equal(view.tournament!.steps.length, 1);
+    assert.ok(!view.reveal!.youReady, 'ready resets every step');
 
-    // The countdown only starts once the round's games have finished playing.
-    let view = service.view(code, A)!;
+    // The countdown only starts once the step's games have finished playing.
     const playing = view.reveal!.playingUntil - view.serverNow;
     assert.ok(playing > 0, 'round 1 has live games to watch');
     assert.equal(view.reveal!.deadline! - view.reveal!.playingUntil, REVEAL_STEP_MS);
@@ -276,13 +285,18 @@ describe('rooms', () => {
     service.setRevealReady(code, B, true);
     advance(playing - 250, 250);
     assert.equal(service.view(code, A)!.reveal!.step, 1, 'nobody skips a game still being played');
+
+    // Between games, a new tactic and lineup count from the next game on.
+    service.setTactic(code, A, { offense: 'threes', pace: 'fast' }, false);
+    assert.deepEqual(service.view(code, A)!.tactics!.yours!.tactic, { offense: 'threes', pace: 'fast' });
     advance(500, 250);
-    assert.equal(service.view(code, A)!.reveal!.step, 2, 'all ready once the games end: move on');
+    view = service.view(code, A)!;
+    assert.equal(view.reveal!.step, 2, 'all ready once the games end: move on');
+    assert.deepEqual(view.tournament!.tactics['coach-0'], { offense: 'threes', pace: 'fast' });
 
     // Nobody ready: the clock moves the room on, 10s after the games end.
     service.activity(code, A);
     service.activity(code, B);
-    view = service.view(code, A)!;
     advance(view.reveal!.deadline! - view.serverNow - 1_000, 500);
     assert.equal(service.view(code, A)!.reveal!.step, 2);
     advance(1_500, 500);
@@ -297,14 +311,49 @@ describe('rooms', () => {
     service.activity(code, A);
     service.setRevealReady(code, A, true);
     advance(250);
-    assert.ok(service.view(code, A)!.members.find((m) => m.name === 'Lucas')!.away);
-    assert.equal(service.view(code, A)!.reveal!.step, Math.min(before + 1, reveal.lastStep));
+    view = service.view(code, A)!;
+    assert.ok(view.members.find((m) => m.name === 'Lucas')!.away);
+    assert.ok(view.reveal!.step === before + 1 || view.reveal!.awards);
 
     // It stops on the awards.
-    advance(REVEAL_STEP_MS * (reveal.lastStep + 2), 1_000);
-    reveal = service.view(code, A)!.reveal!;
-    assert.equal(reveal.step, reveal.lastStep);
-    assert.equal(reveal.deadline, null);
+    advance(30 * 60_000, 2_000);
+    view = service.view(code, A)!;
+    assert.ok(view.tournament!.finished);
+    assert.ok(view.reveal!.awards);
+    assert.equal(view.reveal!.deadline, null);
+  });
+
+  it('play again: the same people go back to the lobby with the same settings', () => {
+    const { service, code, advance } = toCompetition();
+    assert.deepEqual(service.playAgain(code, A), { ok: false, error: 'started' }, 'not before the awards');
+    advance(30 * 60_000, 2_000);
+    service.activity(code, A);
+    service.activity(code, B);
+    assert.deepEqual(service.playAgain(code, B), { ok: false, error: 'not_host' }, 'the host decides');
+    assert.ok(service.playAgain(code, A).ok);
+
+    const view = service.view(code, B)!;
+    assert.equal(view.phase, 'lobby');
+    assert.equal(view.settings.maxCoaches, SETTINGS.maxCoaches);
+    assert.deepEqual(view.members.map((m) => m.name), ['Pedro', 'Lucas']);
+    assert.ok(view.members.every((m) => m.coachId === null && !m.away));
+    assert.equal(view.tournament, null);
+    assert.equal(view.auction, null);
+
+    // And a new match can start from there.
+    assert.ok(service.setReady(code, B, true).ok);
+    assert.ok(service.start(code, A).ok);
+    assert.equal(service.view(code, A)!.phase, 'auction');
+  });
+
+  it('play again: if the host is gone, anyone can bring the room back', () => {
+    const { service, code, advance } = toCompetition();
+    advance(30 * 60_000, 2_000);
+    service.activity(code, B);
+    assert.ok(service.playAgain(code, B).ok, 'Pedro is away');
+    const view = service.view(code, B)!;
+    assert.equal(view.phase, 'lobby');
+    assert.ok(view.members.find((m) => m.name === 'Lucas')!.isHost);
   });
 
   it('validates settings sent by clients', () => {

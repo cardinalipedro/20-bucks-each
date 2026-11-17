@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { HUMAN_COACH_ID, useAuction, type GameConfig } from '@/presentation/hooks/useAuction';
 import { useI18n } from '@/presentation/i18n/I18nProvider';
-import { simulateTournament } from '@/domain/simulation/tournament';
+import { playNextStep, playToEnd, startTournament } from '@/domain/simulation/tournament';
 import { DEFAULT_TACTIC, type Tactic } from '@/domain/simulation/tactics';
 import type { Tournament } from '@/domain/simulation/types';
 import { AuctionScreen } from './AuctionScreen';
@@ -30,9 +30,11 @@ export function Game() {
   }
 
   const backToMenu = () => setConfig(null);
+  // "Play again" keeps the same settings and starts a fresh auction.
+  const playAgain = () => setGameId((id) => id + 1);
   return (
     <ExitGameProvider key={gameId} onExit={backToMenu}>
-      <LocalGame config={config} onRestart={backToMenu} />
+      <LocalGame config={config} onRestart={playAgain} />
     </ExitGameProvider>
   );
 }
@@ -43,6 +45,7 @@ function LocalGame({ config, onRestart }: { config: GameConfig; onRestart: () =>
   const [tactic, setTactic] = useState<Tactic>(DEFAULT_TACTIC);
   const [tacticChosen, setTacticChosen] = useState(false);
   const [tournament, setTournament] = useState<Tournament | null>(null);
+  const [showAwards, setShowAwards] = useState(false);
 
   if (state.phase === 'running') {
     return (
@@ -72,13 +75,38 @@ function LocalGame({ config, onRestart }: { config: GameConfig; onRestart: () =>
     );
   }
 
+  // The teams as they are now: lineup changes live in the auction state.
+  const teams = () => ({ coaches: state.coaches, players: state.players, tactics: { [HUMAN_COACH_ID]: tactic } });
+
   if (tournament) {
-    return <TournamentScreen tournament={tournament} auction={state} humanId={HUMAN_COACH_ID} onRestart={onRestart} />;
+    const advance = () => {
+      if (tournament.finished) setShowAwards(true);
+      else setTournament(playNextStep(tournament, teams()));
+    };
+    const simulateAll = () => {
+      setTournament(playToEnd(tournament, teams()));
+      setShowAwards(true);
+    };
+    return (
+      <TournamentScreen
+        tournament={tournament}
+        auction={state}
+        humanId={HUMAN_COACH_ID}
+        showAwards={showAwards}
+        hideRatings={config.hideOverall}
+        tactic={tactic}
+        onTacticChange={setTactic}
+        onSwap={swap}
+        onRestart={onRestart}
+        onAdvance={advance}
+        onSimulateAll={simulateAll}
+      />
+    );
   }
 
-  const startTournament = () =>
+  const startCompetition = () =>
     setTournament(
-      simulateTournament({
+      startTournament({
         coaches: state.coaches,
         players: state.players,
         settings: config.tournament,
@@ -91,7 +119,7 @@ function LocalGame({ config, onRestart }: { config: GameConfig; onRestart: () =>
     <ResultsScreen
       state={state}
       humanId={HUMAN_COACH_ID}
-      onContinue={startTournament}
+      onContinue={startCompetition}
       continueLabel={config.tournament.format === 'playoffsOnly' ? t.results.startPlayoffs : t.results.startSeason}
     />
   );

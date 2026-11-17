@@ -10,6 +10,7 @@ export const CLIENT_EVENTS = {
   roomStart: 'room:start',
   roomReady: 'room:ready',
   roomKick: 'room:kick',
+  roomPlayAgain: 'room:playAgain',
   tacticSet: 'tactics:set',
   lineupSwap: 'lineup:swap',
   revealReady: 'reveal:ready',

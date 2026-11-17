@@ -110,13 +110,19 @@ export function SeriesDetails({
   const { t } = useI18n();
   const columns = t.tournament.columns;
   const leaders = topPerformers(series.games, SERIES_LEADERS);
-  const winnerWins = Math.max(series.highWins, series.lowWins);
-  const loserWins = Math.min(series.highWins, series.lowWins);
+  const most = Math.max(series.highWins, series.lowWins);
+  const least = Math.min(series.highWins, series.lowWins);
+  const leaderId = series.highWins >= series.lowWins ? series.high.coachId : series.low!.coachId;
   const average = (total: number, games: number) => (total / games).toFixed(1);
+  const status = series.winnerId
+    ? t.tournament.seriesResult(names[series.winnerId], most, least)
+    : most === least
+      ? t.tournament.seriesTied(most)
+      : t.tournament.seriesLeads(names[leaderId], most, least);
 
   return (
     <div className={styles.seriesDetails}>
-      <p className={styles.seriesResult}>{t.tournament.seriesResult(names[series.winnerId], winnerWins, loserWins)}</p>
+      <p className={styles.seriesResult}>{status}</p>
 
       <section className={styles.boxTeam} aria-label={t.tournament.seriesLeaders}>
         <table className={`${styles.boxTable} ${styles.leadersTable}`}>

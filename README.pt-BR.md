@@ -51,11 +51,12 @@ Duas coisas me inspiraram. Uma é um formato de vídeo de criadores americanos d
 - **modo ausente**: depois de 45 s parado, um bot marca você como pronto, dá lances por você ou escolhe sua tática;
 - bot no lugar de quem sai;
 - um token secreto no navegador, para recarregar a página sem perder a vaga;
-- campeonato assistido junto: a sala inteira avança rodada por rodada, e cada rodada espera até 10 s por todos darem pronto (quem está ausente conta como pronto).
+- campeonato assistido junto: a sala inteira avança rodada por rodada; quando os jogos da rodada terminam, todos têm até 10 s para ler e dar pronto (quem está ausente conta como pronto);
+- "jogar novamente" leva as mesmas pessoas de volta ao lobby da sala, com as mesmas configurações.
 
-O servidor nunca envia informação escondida: a fila de jogadores, a semente aleatória, a tática dos outros técnicos e os tokens.
+O servidor nunca envia informação escondida: a fila de jogadores, a semente aleatória (o campeonato é simulado passo a passo no servidor, então ninguém consegue prever o próximo jogo), a tática dos outros técnicos e os tokens.
 
-**6. Tática e escalação.** Depois do leilão, cada técnico escolhe um estilo de ataque (equilibrado, chuva de 3, garrafão) e um ritmo (lento, normal, rápido). Cada escolha ajuda ou atrapalha conforme o elenco. As referências são as medianas dos atributos dos times em leilões simulados, então cada estilo é bom para mais ou menos metade dos times. Um editor de escalação permite trocar jogadores entre as posições e o banco.
+**6. Tática e escalação.** Depois do leilão, cada técnico escolhe um estilo de ataque (equilibrado, chuva de 3, garrafão) e um ritmo (lento, normal, rápido). Cada escolha ajuda ou atrapalha conforme o elenco. As referências são as medianas dos atributos dos times em leilões simulados, então cada estilo é bom para mais ou menos metade dos times. Um editor de escalação permite trocar jogadores entre as posições e o banco. Os dois podem mudar entre um jogo e outro: cada rodada da temporada e cada jogo de uma série de playoffs só é simulado na hora, com a tática e a escalação daquele momento. Nas partidas sem overall, o efeito das táticas também fica escondido.
 
 **7. Acabamento.** Português, inglês e espanhol. Tema claro e escuro sem piscar ao carregar. Diálogos, rótulos e regiões ao vivo acessíveis. Várias rodadas de ajuste de espaçamento vindas do uso real.
 

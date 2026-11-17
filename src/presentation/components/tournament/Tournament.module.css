@@ -693,3 +693,15 @@
     height: 72px;
   }
 }
+
+/* Tactic editor between games */
+.editNote {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-soft);
+}
+
+.mySeriesNote {
+  flex: 2 1 380px;
+  margin: 0;
+}

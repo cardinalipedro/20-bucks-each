@@ -6,7 +6,17 @@ import { createRng } from '@/domain/shared/rng';
 import type { AuctionState } from '@/domain/auction/types';
 import { allocate, simulateGame } from './game';
 import { winProbability } from './probability';
-import { bracketOrder, roundRobin, simulateTournament, topPerformers } from './tournament';
+import {
+  beforeLastStep,
+  bracketOrder,
+  hasNextGame,
+  playNextStep,
+  roundRobin,
+  simulateTournament,
+  startTournament,
+  stepGames,
+  topPerformers,
+} from './tournament';
 import { bestTactic, OFFENSE_STYLES, offenseBonus, PACES, paceBonus, teamProfile, type Tactic, type TeamProfile } from './tactics';
 import type { TournamentFormat } from './types';
 
@@ -154,7 +164,7 @@ describe('tournament', () => {
           seed: 1,
         });
         const ids = new Set(coaches.map((c) => c.id));
-        assert.ok(ids.has(tournament.championId));
+        assert.ok(tournament.finished && ids.has(tournament.championId!));
         assert.ok(tournament.mvp);
         if (format === 'seasonOnly') assert.equal(tournament.finalsMvp, null);
         else assert.equal(tournament.finalsMvp?.coachId, tournament.championId, 'finals MVP plays for the champion');
@@ -171,14 +181,14 @@ describe('tournament', () => {
         if (format === 'playoffsOnly') assert.equal(tournament.seasonRounds.length, 0);
         else {
           const gamesPerTeam = coachCount <= 6 ? 2 * (coachCount - 1) : coachCount - 1;
-          for (const standing of tournament.finalStandings) {
+          for (const standing of tournament.standings) {
             assert.equal(standing.wins + standing.losses, gamesPerTeam);
           }
         }
 
         if (format === 'seasonOnly') {
           assert.equal(tournament.playoffRounds.length, 0);
-          assert.equal(tournament.championId, tournament.finalStandings[0].coachId);
+          assert.equal(tournament.championId, tournament.standings[0].coachId);
         } else {
           const final = tournament.playoffRounds.at(-1)!;
           assert.equal(final.series.length, 1);
@@ -194,6 +204,52 @@ describe('tournament', () => {
       });
     }
   }
+
+  it('is played one step at a time: season rounds, then one playoff game per step', () => {
+    const { coaches, players } = finishedAuction(4, 0, 9);
+    const settings = { format: 'seasonAndPlayoffs' as const, playoffTeams: 4 as const, seriesLength: 7 as const };
+    let t = startTournament({ coaches, players, settings, seed: 3 });
+    assert.equal(t.steps.length, 0);
+    assert.equal(t.schedule.length, 6, 'four teams play home and away');
+    assert.ok(coaches.every((coach) => hasNextGame(t, coach.id)));
+
+    for (let round = 0; round < 6; round++) t = playNextStep(t, { coaches, players });
+    assert.deepEqual(t.steps.at(-1), { kind: 'season', round: 5 });
+    assert.equal(t.playoffRounds.length, 1, 'the bracket is known as soon as the season ends');
+    assert.ok(t.playoffRounds[0].series.every((series) => series.games.length === 0));
+
+    t = playNextStep(t, { coaches, players });
+    assert.deepEqual(t.steps.at(-1), { kind: 'playoffs', round: 0, game: 1 });
+    assert.ok(t.playoffRounds[0].series.every((series) => series.games.length === 1), 'game 1 of every series');
+    assert.equal(stepGames(t, t.steps.at(-1)!).length, 2);
+
+    // The screen can hold back the last game until it has been shown live.
+    const before = beforeLastStep(t);
+    assert.ok(before.playoffRounds[0].series.every((series) => series.games.length === 0));
+
+    // A tactic changed between games is used from the next game on.
+    const human = coaches[0];
+    t = playNextStep(t, { coaches, players, tactics: { [human.id]: { offense: 'paint', pace: 'slow' } } });
+    assert.deepEqual(t.tactics[human.id], { offense: 'paint', pace: 'slow' });
+
+    while (!t.finished) t = playNextStep(t, { coaches, players });
+    const final = t.playoffRounds.at(-1)!.series[0];
+    assert.equal(t.championId, final.winnerId);
+    assert.ok(t.mvp && t.finalsMvp);
+    assert.equal(t.playoffRounds.length, 2);
+    assert.ok(coaches.every((coach) => !hasNextGame(t, coach.id)));
+    const playoffSteps = t.steps.filter((step) => step.kind === 'playoffs').length;
+    const longestSeries = (round: number) => Math.max(...t.playoffRounds[round].series.map((s) => s.games.length));
+    assert.equal(playoffSteps, longestSeries(0) + longestSeries(1));
+    assert.equal(playNextStep(t, { coaches, players }), t, 'nothing left to play');
+  });
+
+  it('keeps no secrets in the public view but the random state', () => {
+    const { coaches, players } = finishedAuction(3);
+    const t = startTournament({ coaches, players, settings: { format: 'playoffsOnly', playoffTeams: 4, seriesLength: 1 }, seed: 1 });
+    assert.equal(t.playoffRounds.length, 1, 'without a season the bracket exists from the start');
+    assert.equal(typeof t.rngState, 'number');
+  });
 
   it('the best team does not always win', () => {
     const { coaches, players } = finishedAuction(8);
