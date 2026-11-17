@@ -1,0 +1,30 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.accent {
+  color: var(--accent);
+}
+
+.subtitle {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
