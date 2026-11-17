@@ -162,6 +162,12 @@ io.on('connection', (socket: Socket) => {
     safeAck(ack)({ ok: true });
   });
 
+  socket.on(CLIENT_EVENTS.lineupSwap, (payload: { a?: unknown; b?: unknown }) => {
+    if (!data.code) return;
+    service.swapLineup(data.code, token, payload?.a, payload?.b);
+    void broadcastRoom(data.code);
+  });
+
   socket.on(CLIENT_EVENTS.tacticSet, (payload: { tactic?: unknown; confirmed?: unknown }) => {
     if (!data.code) return;
     service.setTactic(data.code, token, payload?.tactic, payload?.confirmed);

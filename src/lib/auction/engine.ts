@@ -1,5 +1,6 @@
 import { botReactionDelay, decideBot } from './bots';
 import { buildPool } from './pool';
+import { canPlaySlot } from './positions';
 import { createRng, type Rng } from './rng';
 import {
   BID_EXTENSION_SECONDS,
@@ -293,7 +294,8 @@ function finish(state: AuctionState): AuctionState {
     let coach = original;
     coach.roster.forEach((slot, index) => {
       if (slot.playerId !== null || pool.length === 0) return;
-      const fitIndex = pool.findIndex((p) => slot.kind === 'BENCH' || p.positions.includes(slot.kind));
+      const natural = pool.findIndex((p) => slot.kind === 'BENCH' || p.positions.includes(slot.kind));
+      const fitIndex = natural !== -1 ? natural : pool.findIndex((p) => canPlaySlot(p, slot.kind));
       const [player] = pool.splice(fitIndex === -1 ? 0 : fitIndex, 1);
       coach = signPlayer(coach, player, 0, index);
     });

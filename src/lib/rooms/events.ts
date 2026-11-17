@@ -11,6 +11,7 @@ export const CLIENT_EVENTS = {
   roomReady: 'room:ready',
   roomKick: 'room:kick',
   tacticSet: 'tactics:set',
+  lineupSwap: 'lineup:swap',
   auctionBid: 'auction:bid',
   auctionPass: 'auction:pass',
   activity: 'presence:activity',

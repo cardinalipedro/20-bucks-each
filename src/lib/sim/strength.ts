@@ -1,3 +1,4 @@
+import { isNaturalPosition } from '../auction/positions';
 import type { Coach, Player } from '../auction/types';
 
 /** Rating lost for each starter playing out of position. */
@@ -17,7 +18,7 @@ export function teamRating(coach: Coach, players: Record<string, Player>): numbe
   for (const slot of starters) {
     if (!slot.playerId) continue;
     const player = players[slot.playerId];
-    const outOfPosition = !player.positions.includes(slot.kind as Player['positions'][number]);
+    const outOfPosition = !isNaturalPosition(player, slot.kind);
     total += player.overall - (outOfPosition ? OUT_OF_POSITION_PENALTY : 0);
   }
   const starterAverage = total / starters.length;

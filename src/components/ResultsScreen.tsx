@@ -2,6 +2,7 @@
 
 import type { AuctionState, Coach } from '@/lib/auction/types';
 import { useI18n } from '@/i18n/I18nProvider';
+import { isNaturalPosition } from '@/lib/auction/positions';
 import { amountSpent, bestGm as pickBestGm, biggestBuy as pickBiggestBuy, rankByRating } from '@/lib/awards';
 import { coachLabel, formatMoney, slotLabel } from '@/lib/format';
 import { teamRating } from '@/lib/sim/strength';
@@ -88,6 +89,11 @@ export function ResultsScreen({ state, humanId, onContinue, continueLabel }: Res
                   <li key={slotIndex} className={styles.rosterItem}>
                     <span className={styles.slotTag}>{slotLabel(slot.kind, t)}</span>
                     <span className={styles.playerName}>{player?.name ?? '—'}</span>
+                    {player && slot.kind !== 'BENCH' && !isNaturalPosition(player, slot.kind) && (
+                      <span className={styles.offPosition} title={t.tactics.outOfPosition}>
+                        −3
+                      </span>
+                    )}
                     <span className={styles.ovr}>{player?.overall}</span>
                     <span className={styles.price}>{formatMoney(slot.price)}</span>
                   </li>

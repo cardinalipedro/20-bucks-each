@@ -74,7 +74,10 @@ src/
 - Quem **sai** da partida é substituído por um bot de vez.
 - Recarregar a página não tira você da sala: o navegador guarda um token secreto que devolve sua vaga.
 
-## Tática
+## Tática e escalação
+
+Na tela de tática também dá para mudar a **escalação**: cada posição tem uma lista com quem pode jogar ali (posição natural ou vizinha), e escolher alguém troca os dois de lugar, inclusive com o banco. Jogador fora de posição aparece com **−3** (`lib/auction/lineup.ts`).
+
 
 Depois do leilão cada técnico escolhe **estilo de ataque** (Equilibrado, Chuva de 3, Garrafão) e **ritmo** (Lento, Normal, Rápido). Nas salas são 60s (`TACTICS_MS`); se o tempo acabar, vale o que estiver marcado.
 
@@ -103,7 +106,7 @@ Por isso dá pra testar sem abrir o navegador, e na etapa do multiplayer o mesmo
 - Os jogadores vão a leilão um por um, em ordem aleatória, sem mostrar quem vem depois.
 - Cada jogador tem um relógio (10, 15 ou 20s) que **não reinicia** com lances. Um lance nos últimos 3s volta o relógio para 3s (`BID_EXTENSION_SECONDS` em `lib/auction/rules.ts`). Quando zera, o maior lance leva.
 - Lance máximo = saldo − $1 por vaga que ainda falta (ninguém fica sem dinheiro pra completar o time).
-- O jogador só pode ser comprado por quem tem vaga na posição dele (posição principal ou secundária) ou no banco.
+- O jogador só pode ser comprado por quem tem vaga para ele: na posição dele, numa posição vizinha (PG↔SG↔SF↔PF↔C) ou no banco. Fora da posição natural ele perde 3 de força (`lib/auction/positions.ts`).
 - Se todo mundo passar, o lote fecha na hora.
 - Se no fim sobrar vaga aberta, ela é preenchida de graça com o **pior** jogador que sobrou (passar esperando craque é arriscado).
 

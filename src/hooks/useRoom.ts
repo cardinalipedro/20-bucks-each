@@ -111,6 +111,7 @@ export function useRoom(code: string, name: string) {
     setReady: (ready: boolean) => request(CLIENT_EVENTS.roomReady, { ready }),
     kick: (memberId: string) => request(CLIENT_EVENTS.roomKick, { memberId }),
     setTactic: (tactic: Tactic, confirmed: boolean) => getSocket().emit(CLIENT_EVENTS.tacticSet, { tactic, confirmed }),
+    swapLineup: (a: number, b: number) => getSocket().emit(CLIENT_EVENTS.lineupSwap, { a, b }),
     updateSettings: (settings: RoomSettings) => request(CLIENT_EVENTS.roomSettings, { settings }),
     leave: () => request(CLIENT_EVENTS.roomLeave),
   };

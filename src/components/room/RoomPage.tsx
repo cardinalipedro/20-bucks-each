@@ -137,7 +137,14 @@ function RoomScreen({ code, name }: { code: string; name: string }) {
       )}
       {view.phase === 'tactics' && auction && view.tactics && me.coachId && (
         <>
-          <RoomTactics auction={auction} tactics={view.tactics} coachId={me.coachId} now={room.now} onSet={room.setTactic} />
+          <RoomTactics
+            auction={auction}
+            tactics={view.tactics}
+            coachId={me.coachId}
+            now={room.now}
+            onSet={room.setTactic}
+            onSwap={room.swapLineup}
+          />
           {me.away && <AwayBanner onBack={room.comeBack} />}
         </>
       )}

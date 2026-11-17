@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useReducer, useState } from 'react';
 import { PLAYERS } from '@/data/players';
 import { createAuction, passLot, placeBid, tick } from '@/lib/auction/engine';
+import { swapLineup } from '@/lib/auction/lineup';
 import type { AuctionState } from '@/lib/auction/types';
 import type { TournamentSettings } from '@/lib/sim/types';
 
@@ -23,7 +24,8 @@ const TICK_MS = 200;
 type Action =
   | { type: 'tick'; now: number }
   | { type: 'bid'; amount: number; now: number }
-  | { type: 'pass'; now: number };
+  | { type: 'pass'; now: number }
+  | { type: 'swap'; a: number; b: number };
 
 function reducer(state: AuctionState, action: Action): AuctionState {
   switch (action.type) {
@@ -33,6 +35,8 @@ function reducer(state: AuctionState, action: Action): AuctionState {
       return placeBid(state, HUMAN_COACH_ID, action.amount, action.now);
     case 'pass':
       return passLot(state, HUMAN_COACH_ID, action.now);
+    case 'swap':
+      return swapLineup(state, HUMAN_COACH_ID, action.a, action.b);
   }
 }
 
@@ -68,6 +72,7 @@ export function useAuction(config: GameConfig) {
 
   const bid = useCallback((amount: number) => dispatch({ type: 'bid', amount, now: Date.now() }), []);
   const pass = useCallback(() => dispatch({ type: 'pass', now: Date.now() }), []);
+  const swap = useCallback((a: number, b: number) => dispatch({ type: 'swap', a, b }), []);
 
-  return { state, now, bid, pass };
+  return { state, now, bid, pass, swap };
 }

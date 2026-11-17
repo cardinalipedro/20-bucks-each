@@ -1,3 +1,4 @@
+import { playablePositions } from './positions';
 import { POSITIONS, type AuctionSettings, type Coach, type Lot, type Player, type RosterSlot } from './types';
 
 export const MIN_BID = 1;
@@ -25,10 +26,11 @@ export function isRosterFull(coach: Coach): boolean {
 
 /**
  * Index of the slot this player would take, or -1.
- * Primary position first, then secondary positions, then the bench.
+ * Natural positions first, then a neighboring position (played with a
+ * penalty), then the bench.
  */
 export function findSlotFor(coach: Coach, player: Player): number {
-  for (const position of player.positions) {
+  for (const position of playablePositions(player)) {
     const index = coach.roster.findIndex((slot) => slot.playerId === null && slot.kind === position);
     if (index !== -1) return index;
   }

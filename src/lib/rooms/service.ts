@@ -1,5 +1,6 @@
 import { PLAYERS } from '../../data/players';
 import { createAuction, passLot, placeBid, replaceWithBot, setAutopilot, tick } from '../auction/engine';
+import { swapLineup } from '../auction/lineup';
 import type { AuctionState } from '../auction/types';
 import { bestTactic, DEFAULT_TACTIC, isTactic, teamProfile } from '../sim/tactics';
 import { simulateTournament } from '../sim/tournament';
@@ -222,6 +223,14 @@ export class RoomService {
     if (!found || !isTactic(tactic) || typeof confirmed !== 'boolean') return;
     this.markActive(found.room, found.member);
     found.room.tactics![found.member.coachId!] = { tactic, confirmed };
+  }
+
+  /** Moves players between roster slots during the tactics phase. */
+  swapLineup(code: string, token: string, a: unknown, b: unknown) {
+    const found = this.playing(code, token, 'tactics');
+    if (!found) return;
+    this.markActive(found.room, found.member);
+    found.room.auction = swapLineup(found.room.auction!, found.member.coachId!, a, b);
   }
 
   /** Any input from the player: resets the idle timer and ends away mode. */

@@ -3,6 +3,8 @@
 import { useMemo } from 'react';
 import { useI18n } from '@/i18n/I18nProvider';
 import type { Coach, Player } from '@/lib/auction/types';
+import { canSwap } from '@/lib/auction/lineup';
+import { isNaturalPosition } from '@/lib/auction/positions';
 import { slotLabel } from '@/lib/format';
 import { teamRating } from '@/lib/sim/strength';
 import {
@@ -25,6 +27,8 @@ interface TacticsScreenProps {
   players: Record<string, Player>;
   tactic: Tactic;
   onChange: (tactic: Tactic) => void;
+  /** Trade the players of two roster slots. */
+  onSwap: (a: number, b: number) => void;
   onConfirm: () => void;
   /** Rooms only: the choice was sent and we are waiting for the others. */
   confirmed?: boolean;
@@ -51,6 +55,7 @@ export function TacticsScreen({
   players,
   tactic,
   onChange,
+  onSwap,
   onConfirm,
   confirmed = false,
   onUnconfirm,
@@ -82,15 +87,42 @@ export function TacticsScreen({
       <div className={styles.layout}>
         <section className={`card ${styles.team}`} aria-labelledby="your-team">
           <h2 id="your-team" className="eyebrow">
-            {t.tactics.yourTeam}
+            {t.tactics.lineupTitle}
           </h2>
+          <p className={styles.hint}>{t.tactics.lineupHint}</p>
           <ul className={styles.roster}>
             {coach.roster.map((slot, index) => {
               const player = slot.playerId ? players[slot.playerId] : null;
+              const outOfPosition = !!player && slot.kind !== 'BENCH' && !isNaturalPosition(player, slot.kind);
+              // Who can come into this slot: anyone whose swap is valid both ways.
+              const options = coach.roster
+                .map((other, otherIndex) => ({ other, otherIndex }))
+                .filter(({ other, otherIndex }) => other.playerId && (otherIndex === index || canSwap(coach, index, otherIndex, players)));
+              const label = slotLabel(slot.kind, t);
               return (
-                <li key={index}>
-                  <span className={styles.slot}>{slotLabel(slot.kind, t)}</span>
-                  <span className={styles.playerName}>{player?.name ?? '—'}</span>
+                <li key={index} className={styles.lineupRow}>
+                  <label htmlFor={`slot-${index}`} className={styles.slot}>
+                    {label}
+                  </label>
+                  <select
+                    id={`slot-${index}`}
+                    className={styles.lineupSelect}
+                    value={index}
+                    disabled={confirmed || options.length <= 1}
+                    aria-label={t.tactics.slotLabel(label)}
+                    onChange={(event) => onSwap(index, Number(event.target.value))}
+                  >
+                    {options.map(({ other, otherIndex }) => (
+                      <option key={otherIndex} value={otherIndex}>
+                        {players[other.playerId!].name} ({players[other.playerId!].positions.join('/')})
+                      </option>
+                    ))}
+                  </select>
+                  {outOfPosition && (
+                    <span className={styles.outOfPosition} title={t.tactics.outOfPosition}>
+                      −3
+                    </span>
+                  )}
                   <span className={styles.ovr}>{player?.overall}</span>
                 </li>
               );

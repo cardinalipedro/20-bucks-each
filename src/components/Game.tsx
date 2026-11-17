@@ -39,7 +39,7 @@ export function Game() {
 
 function LocalGame({ config, onRestart }: { config: GameConfig; onRestart: () => void }) {
   const { t } = useI18n();
-  const { state, now, bid, pass } = useAuction(config);
+  const { state, now, bid, pass, swap } = useAuction(config);
   const [tactic, setTactic] = useState<Tactic>(DEFAULT_TACTIC);
   const [tacticChosen, setTacticChosen] = useState(false);
   const [tournament, setTournament] = useState<Tournament | null>(null);
@@ -65,6 +65,7 @@ function LocalGame({ config, onRestart }: { config: GameConfig; onRestart: () =>
         players={state.players}
         tactic={tactic}
         onChange={setTactic}
+        onSwap={swap}
         onConfirm={() => setTacticChosen(true)}
       />
     );

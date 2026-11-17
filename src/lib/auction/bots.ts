@@ -1,3 +1,4 @@
+import { isNaturalPosition } from './positions';
 import type { Rng } from './rng';
 import { canBidOn, emptySlotCount, findSlotFor, maxBid, minNextBid, topBid } from './rules';
 import type { AuctionState, Coach, Player } from './types';
@@ -26,8 +27,9 @@ export function botValuation(bot: Coach, player: Player, state: AuctionState): n
   const budgetFactor = Math.min(2, Math.max(0.5, cashPerSlot / fairPerSlot));
 
   const slotIndex = findSlotFor(bot, player);
-  const benchOnly = slotIndex !== -1 && bot.roster[slotIndex].kind === 'BENCH';
-  const needFactor = benchOnly ? 0.5 : 1;
+  const slotKind = slotIndex === -1 ? null : bot.roster[slotIndex].kind;
+  // Worth less as a backup, or when he would play out of position.
+  const needFactor = slotKind === 'BENCH' ? 0.5 : slotKind && !isNaturalPosition(player, slotKind) ? 0.8 : 1;
 
   // When players are running out, filling the roster gets urgent.
   const remainingPlayers = state.queue.length + 1;

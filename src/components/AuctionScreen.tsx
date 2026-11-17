@@ -1,5 +1,6 @@
 'use client';
 
+import { isNaturalPosition } from '@/lib/auction/positions';
 import { canBidOn, findSlotFor, maxBid, minNextBid, topBid } from '@/lib/auction/rules';
 import type { AuctionState, Coach } from '@/lib/auction/types';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -103,6 +104,11 @@ export function AuctionScreen({ state, now, humanId, onBid, onPass, hideRatings 
                 <span className={slot.playerId ? undefined : 'muted'}>
                   {slot.playerId ? state.players[slot.playerId].name : t.auction.openSlot}
                 </span>
+                {slot.playerId && slot.kind !== 'BENCH' && !isNaturalPosition(state.players[slot.playerId], slot.kind) && (
+                  <span className={styles.offPosition} title={t.tactics.outOfPosition}>
+                    −3
+                  </span>
+                )}
                 {slot.playerId && <span className={styles.bidAmount}>{formatMoney(slot.price)}</span>}
               </li>
             ))}
