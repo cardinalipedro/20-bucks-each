@@ -179,6 +179,8 @@ function applyBid(state: AuctionState, coachId: string, amount: number, now: num
     .map((c) => c.id);
 
   const next = { ...state, lot: updatedLot };
+  // Nobody can (or wants to) cover this bid: sold right away, no need to wait for the clock.
+  if (everyoneElseIsOut(next)) return closeLot(next, now, rng);
   return { ...next, botPlans: planBots(next, now, rng) };
 }
 

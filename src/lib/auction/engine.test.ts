@@ -70,9 +70,9 @@ describe('auction engine', () => {
     assert.equal(placeBid(state, human.id, 17, 1), state);
     assert.equal(placeBid(state, human.id, 0, 1), state);
 
-    const afterBid = placeBid(state, human.id, 16, 1);
-    assert.equal(afterBid.lot?.bids.at(-1)?.amount, 16);
-    assert.equal(minNextBid(afterBid.lot!), 17);
+    const afterBid = placeBid(state, human.id, 5, 1);
+    assert.equal(afterBid.lot?.bids.at(-1)?.amount, 5);
+    assert.equal(minNextBid(afterBid.lot!), 6);
   });
 
   it('closes the lot early when everyone else passes', () => {
@@ -168,6 +168,23 @@ describe('auction engine', () => {
     assert.ok(!state.coaches[0].isBot && !state.coaches[0].away);
     assert.equal(state.botPlans['coach-0'], undefined);
     assert.equal(SETTINGS.startingCash - state.coaches[0].cash, spentWhileAway, 'money is kept');
+  });
+
+  it('sells at once when a bid cannot be covered by anyone else', () => {
+    const state = newGame(2, SETTINGS, 2);
+    const [a, b] = state.coaches;
+    const playerId = state.lot!.playerId;
+    // b passes first; then a bids: nobody left to cover it.
+    const afterPass = passLot(state, b.id, 1);
+    assert.equal(afterPass.lotNumber, 1, 'lot stays open: a can still bid');
+    const afterBid = placeBid(afterPass, a.id, 1, 2);
+    assert.equal(afterBid.lotNumber, 2, 'sold immediately');
+    assert.ok(afterBid.coaches[0].roster.some((slot) => slot.playerId === playerId));
+
+    // A max bid nobody can afford to beat also ends the lot.
+    const fresh = newGame(2, SETTINGS, 2, 99);
+    const allIn = placeBid(fresh, fresh.coaches[0].id, 16, 1);
+    assert.equal(allIn.lotNumber, 2, 'the rival cannot pay $17, so the lot closed');
   });
 
   it('is deterministic for the same seed', () => {

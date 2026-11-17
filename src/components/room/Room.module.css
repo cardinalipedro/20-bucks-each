@@ -182,29 +182,3 @@
   color: var(--text-soft);
   text-align: center;
 }
-
-/* Away mode */
-.awayBanner {
-  position: fixed;
-  left: 50%;
-  bottom: 24px;
-  z-index: 50;
-  width: min(640px, calc(100% - 32px));
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 18px 20px;
-  border-radius: var(--radius);
-  border: 1px solid var(--warn);
-  background: var(--surface);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-}
-
-.awayBody {
-  margin: 4px 0 0;
-  font-size: 14px;
-  color: var(--text-soft);
-}

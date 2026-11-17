@@ -155,6 +155,12 @@
   gap: 10px;
 }
 
+/* A legend is not a flex item, so the gap above does not apply to it. */
+.group > legend {
+  padding: 0;
+  margin-bottom: 12px;
+}
+
 .options {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

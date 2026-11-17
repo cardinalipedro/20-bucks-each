@@ -2,11 +2,12 @@
 
 import { isNaturalPosition } from '@/lib/auction/positions';
 import { canBidOn, findSlotFor, maxBid, minNextBid, topBid } from '@/lib/auction/rules';
-import type { AuctionState, Coach } from '@/lib/auction/types';
+import type { AuctionState, Coach, Lot, Player } from '@/lib/auction/types';
 import { useI18n } from '@/i18n/I18nProvider';
 import type { Messages } from '@/i18n/messages';
 import { coachLabel, formatMoney, playerInitials, slotLabel } from '@/lib/format';
 import { ExitGameButton } from './ExitGame';
+import { Banner } from './Banner';
 import { Header } from './Header';
 import styles from './AuctionScreen.module.css';
 
@@ -18,6 +19,8 @@ interface AuctionScreenProps {
   onPass: () => void;
   /** Hide overall and attributes so bids rely on NBA knowledge. */
   hideRatings?: boolean;
+  /** A bot is playing for you: the away banner is shown instead of the pass notice. */
+  away?: boolean;
 }
 
 const BID_INCREMENTS = [1, 2, 5];
@@ -26,7 +29,7 @@ const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
 
 const RATING_KEYS = ['shooting', 'finishing', 'playmaking', 'defense', 'rebounding', 'athleticism'] as const;
 
-export function AuctionScreen({ state, now, humanId, onBid, onPass, hideRatings = false }: AuctionScreenProps) {
+export function AuctionScreen({ state, now, humanId, onBid, onPass, hideRatings = false, away = false }: AuctionScreenProps) {
   const { t } = useI18n();
   const lot = state.lot;
   const me = state.coaches.find((coach) => coach.id === humanId)!;
@@ -223,21 +226,62 @@ export function AuctionScreen({ state, now, humanId, onBid, onPass, hideRatings 
         <section className={`card ${styles.coaches}`} aria-label={t.auction.coaches}>
           <h2 className="eyebrow">{t.auction.coaches}</h2>
           {state.coaches.map((coach) => (
-            <CoachRow key={coach.id} coach={coach} isYou={coach.id === humanId} state={state} t={t} />
+            <CoachRow
+              key={coach.id}
+              coach={coach}
+              isYou={coach.id === humanId}
+              passed={lot.passed.includes(coach.id)}
+              state={state}
+              t={t}
+            />
           ))}
         </section>
       </div>
+
+      {iPassed && !away && <OutBanner t={t} reason={outReason(me, player, lot)} />}
     </div>
   );
 }
 
-function CoachRow({ coach, isYou, state, t }: { coach: Coach; isYou: boolean; state: AuctionState; t: Messages }) {
+type OutReason = 'full' | 'noSlot' | 'noMoney' | 'passed';
+
+/** Why you are out of the current lot (automatic passes explain themselves). */
+function outReason(me: Coach, player: Player, lot: Lot): OutReason {
+  if (me.roster.every((slot) => slot.playerId !== null)) return 'full';
+  if (findSlotFor(me, player) === -1) return 'noSlot';
+  if (maxBid(me) < minNextBid(lot)) return 'noMoney';
+  return 'passed';
+}
+
+function OutBanner({ t, reason }: { t: Messages; reason: OutReason }) {
+  const out = t.auction.out;
+  if (reason === 'full') return <Banner tone="info" title={out.fullTitle} body={out.fullBody} />;
+  if (reason === 'noSlot') return <Banner title={out.autoTitle} body={out.noSlotBody} />;
+  if (reason === 'noMoney') return <Banner title={out.autoTitle} body={out.noMoneyBody} />;
+  return <Banner tone="info" title={out.passedTitle} body={out.passedBody} />;
+}
+
+interface CoachRowProps {
+  coach: Coach;
+  isYou: boolean;
+  passed: boolean;
+  state: AuctionState;
+  t: Messages;
+}
+
+function CoachRow({ coach, isYou, passed, state, t }: CoachRowProps) {
+  const full = coach.roster.every((slot) => slot.playerId !== null);
   return (
     <div className={styles.coach}>
       <div className={styles.coachHead}>
         <span className={styles.coachName}>{coachLabel(coach, t)}</span>
         {isYou && <span className={styles.youBadge}>{t.common.youBadge}</span>}
         {coach.away && <span className={styles.awayBadge}>{t.away.badge}</span>}
+        {full ? (
+          <span className={styles.passedBadge}>{t.auction.fullBadge}</span>
+        ) : (
+          passed && <span className={styles.passedBadge}>{t.auction.passedBadge}</span>
+        )}
         <span className={styles.coachCash}>{formatMoney(coach.cash)}</span>
       </div>
       <div className={styles.slots}>

@@ -32,6 +32,11 @@
   border: 0;
 }
 
+/* A legend is not a flex item, so the fieldset gap does not apply to it. */
+.fieldset > legend {
+  margin-bottom: 10px;
+}
+
 .label {
   padding: 0;
   margin-bottom: 2px;

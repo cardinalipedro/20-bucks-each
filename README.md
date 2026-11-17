@@ -107,7 +107,8 @@ Por isso dá pra testar sem abrir o navegador, e na etapa do multiplayer o mesmo
 - Cada jogador tem um relógio (10, 15 ou 20s) que **não reinicia** com lances. Um lance nos últimos 3s volta o relógio para 3s (`BID_EXTENSION_SECONDS` em `lib/auction/rules.ts`). Quando zera, o maior lance leva.
 - Lance máximo = saldo − $1 por vaga que ainda falta (ninguém fica sem dinheiro pra completar o time).
 - O jogador só pode ser comprado por quem tem vaga para ele: na posição dele, numa posição vizinha (PG↔SG↔SF↔PF↔C) ou no banco. Fora da posição natural ele perde 3 de força (`lib/auction/positions.ts`).
-- Se todo mundo passar, o lote fecha na hora.
+- Quem não tem vaga para a posição do jogador (nem numa vizinha), ou não tem dinheiro para o próximo lance, passa automaticamente. Um aviso embaixo da tela explica por quê.
+- O lote fecha na hora quando todo mundo passou, ou quando alguém dá um lance que ninguém mais consegue cobrir.
 - Se no fim sobrar vaga aberta, ela é preenchida de graça com o **pior** jogador que sobrou (passar esperando craque é arriscado).
 
 ## Como a simulação funciona

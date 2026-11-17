@@ -131,6 +131,7 @@ function RoomScreen({ code, name }: { code: string; name: string }) {
             onBid={room.bid}
             onPass={room.pass}
             hideRatings={view.settings.hideOverall}
+            away={me.away}
           />
           {me.away && <AwayBanner onBack={room.comeBack} />}
         </>
