@@ -2,7 +2,7 @@
 
 Leilão de jogadores da NBA: cada técnico tem $20 pra montar o quinteto mais forte.
 
-**Etapa 1 (esta versão):** leilão local, você contra bots, com tela de resultado.
+**Versão atual:** leilão local contra bots + campeonato simulado (temporada regular, playoffs e prêmios).
 
 ## Como rodar
 
@@ -40,6 +40,13 @@ src/
     pool.ts            Sorteio do pool limitado de jogadores do leilão
     engine.ts          createAuction, placeBid, passLot, tick
     engine.test.ts     Testes
+  lib/sim/             Simulação do campeonato (TypeScript puro)
+    probability.ts     Chance de vitória: 65% força + 35% sorte (SKILL_WEIGHT)
+    strength.ts        Força do time (titulares, fora de posição, banco)
+    game.ts            Um jogo: placar, quartos e estatísticas dos jogadores
+    tournament.ts      Tabela, temporada, playoffs (séries com chaveamento) e MVP
+    sim.test.ts        Testes
+  components/tournament/  Telas da temporada, chave dos playoffs e prêmios
 ```
 
 O motor (`lib/auction`) é puro: recebe um estado e devolve um estado novo, sem mexer em nada fora.
@@ -56,9 +63,18 @@ Por isso dá pra testar sem abrir o navegador, e na etapa do multiplayer o mesmo
 - Se todo mundo passar, o lote fecha na hora.
 - Se no fim sobrar vaga aberta, ela é preenchida de graça com o **pior** jogador que sobrou (passar esperando craque é arriscado).
 
+## Como a simulação funciona
+
+- **Força do time:** média dos titulares, −3 por jogador fora de posição, mais um bônus pequeno pelo banco.
+- **Chance de vitória:** `65% × curva da diferença de força + 35% × 50%`. Times iguais = 50%; 90 × 85 ≈ 72%; o azarão sempre tem pelo menos ~17%.
+- **Placar:** a margem de pontos é sorteada de uma curva normal ajustada para bater com essa chance; os pontos são divididos em quartos (com prorrogação se empatar) e entre os jogadores pelos atributos.
+- **Temporada:** todos contra todos (ida e volta até 6 times). Desempate: vitórias, saldo, pontos feitos.
+- **Playoffs:** chave padrão (1×8, 4×5…), folga para os melhores quando o número não fecha, séries de 1, 3 ou 7 jogos (mando 2-2-1-1-1).
+- **MVP:** maior média de pontos + 1,2 × rebotes + 1,5 × assistências na temporada.
+
 ## Próximas etapas
 
 2. Ajustes do leilão a partir dos seus testes
-3. Simulação: temporada regular + playoffs
+3. ~~Simulação: temporada regular + playoffs~~ ✅
 4. Multiplayer em tempo real (salas com link de convite)
 5. Base de jogadores real e polimento visual

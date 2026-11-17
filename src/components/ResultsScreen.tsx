@@ -1,9 +1,10 @@
 'use client';
 
-import { teamStrength } from '@/lib/auction/rules';
 import type { AuctionState, Coach } from '@/lib/auction/types';
 import { useI18n } from '@/i18n/I18nProvider';
+import { amountSpent, bestGm as pickBestGm, biggestBuy as pickBiggestBuy, rankByRating } from '@/lib/awards';
 import { coachLabel, formatMoney, slotLabel } from '@/lib/format';
+import { teamRating } from '@/lib/sim/strength';
 import { Header } from './Header';
 import styles from './ResultsScreen.module.css';
 
@@ -11,29 +12,18 @@ interface ResultsScreenProps {
   state: AuctionState;
   humanId: string;
   onRestart: () => void;
+  onContinue: () => void;
+  continueLabel: string;
 }
 
-/** Overall points above a replacement-level player (75) per dollar spent. */
-const REPLACEMENT_OVERALL = 75;
-
-function spent(coach: Coach, startingCash: number): number {
-  return startingCash - coach.cash;
-}
-
-function efficiency(coach: Coach, state: AuctionState): number {
-  const value = coach.roster.reduce(
-    (sum, slot) => sum + (slot.playerId ? Math.max(0, state.players[slot.playerId].overall - REPLACEMENT_OVERALL) : 0),
-    0,
-  );
-  return value / Math.max(1, spent(coach, state.settings.startingCash));
-}
-
-export function ResultsScreen({ state, humanId, onRestart }: ResultsScreenProps) {
+export function ResultsScreen({ state, humanId, onRestart, onContinue, continueLabel }: ResultsScreenProps) {
   const { t } = useI18n();
   const { startingCash } = state.settings;
-  const ranked = [...state.coaches].sort((a, b) => teamStrength(b, state.players) - teamStrength(a, state.players));
-  const bestGm = [...state.coaches].sort((a, b) => efficiency(b, state) - efficiency(a, state))[0];
-  const biggestBuy = [...state.history].filter((r) => r.winnerId).sort((a, b) => b.price - a.price)[0];
+  const ranked = rankByRating(state);
+  const bestGm = pickBestGm(state);
+  const biggestBuy = pickBiggestBuy(state);
+  const rating = (coach: Coach) => teamRating(coach, state.players);
+  const spent = (coach: Coach) => amountSpent(coach, state);
   const coachName = (id: string) => {
     const coach = state.coaches.find((c) => c.id === id);
     return coach ? coachLabel(coach, t) : '?';
@@ -42,25 +32,28 @@ export function ResultsScreen({ state, humanId, onRestart }: ResultsScreenProps)
   return (
     <div className="container">
       <Header subtitle={t.results.subtitle}>
-        <button type="button" className="btn btn-primary" onClick={onRestart}>
+        <button type="button" className="btn" onClick={onRestart}>
           {t.results.playAgain}
         </button>
       </Header>
 
       <h1 className={`display ${styles.title}`}>{t.results.title}</h1>
       <p className={`muted ${styles.note}`}>{t.results.note}</p>
+      <button type="button" className={`btn btn-primary btn-big ${styles.continue}`} onClick={onContinue}>
+        {continueLabel}
+      </button>
 
       <div className={styles.awards}>
         <div className={`card ${styles.award}`}>
           <span className={styles.awardLabel}>{t.results.strongest}</span>
           <span className={`display ${styles.awardValue}`}>{coachLabel(ranked[0], t)}</span>
-          <span className="muted">{t.results.strength(teamStrength(ranked[0], state.players))}</span>
+          <span className="muted">{t.results.strength(rating(ranked[0]))}</span>
         </div>
         <div className={`card ${styles.award}`}>
           <span className={styles.awardLabel}>{t.results.bestGm}</span>
           <span className={`display ${styles.awardValue}`}>{coachLabel(bestGm, t)}</span>
           <span className="muted">
-            {t.results.bestGmDetail(formatMoney(spent(bestGm, startingCash)), teamStrength(bestGm, state.players))}
+            {t.results.bestGmDetail(formatMoney(spent(bestGm)), rating(bestGm))}
           </span>
         </div>
         {biggestBuy && (
@@ -85,10 +78,10 @@ export function ResultsScreen({ state, humanId, onRestart }: ResultsScreenProps)
                   {coach.id === humanId && <span className={styles.youBadge}>{t.common.youBadge}</span>}
                 </h2>
                 <span className="muted">
-                  {t.results.spentOf(formatMoney(spent(coach, startingCash)), formatMoney(startingCash))}
+                  {t.results.spentOf(formatMoney(spent(coach)), formatMoney(startingCash))}
                 </span>
               </div>
-              <span className={`display ${styles.strength}`}>{teamStrength(coach, state.players)}</span>
+              <span className={`display ${styles.strength}`}>{rating(coach)}</span>
             </div>
             <ul className={styles.roster}>
               {coach.roster.map((slot, slotIndex) => {

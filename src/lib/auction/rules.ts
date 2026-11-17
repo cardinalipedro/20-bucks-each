@@ -54,10 +54,3 @@ export function minNextBid(lot: Lot): number {
 export function canBidOn(coach: Coach, player: Player, lot: Lot): boolean {
   return findSlotFor(coach, player) !== -1 && maxBid(coach) >= minNextBid(lot);
 }
-
-/** Average overall of the starters; empty slots count as zero. */
-export function teamStrength(coach: Coach, players: Record<string, Player>): number {
-  const starters = coach.roster.filter((slot) => slot.kind !== 'BENCH');
-  const total = starters.reduce((sum, slot) => sum + (slot.playerId ? players[slot.playerId].overall : 0), 0);
-  return Math.round(total / starters.length);
-}

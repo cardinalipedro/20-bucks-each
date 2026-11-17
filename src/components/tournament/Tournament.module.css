@@ -1,0 +1,436 @@
+/* Toolbar */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 20px 0;
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.tab {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tab[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Layouts */
+.seasonLayout,
+.playoffsLayout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.seasonLayout > .standings {
+  flex: 3 1 560px;
+}
+
+.roundPanel,
+.mySeries {
+  flex: 2 1 380px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.playoffsLayout > .bracket {
+  flex: 3 1 560px;
+}
+
+.emptyNote {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 15px;
+}
+
+/* Standings */
+.standings {
+  min-width: 0;
+}
+
+.sectionHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 30px;
+}
+
+.tableScroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 460px;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.table th {
+  padding: 10px 8px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--muted);
+}
+
+.table td {
+  padding: 10px 8px;
+  border-top: 1px solid var(--border);
+}
+
+.table .num {
+  text-align: right;
+}
+
+.mineRow td {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.rank,
+.rankIn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.rankIn {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 800;
+}
+
+.teamCell {
+  font-weight: 700;
+}
+
+.strong {
+  font-weight: 800;
+}
+
+.rating {
+  font-family: var(--font-display);
+  font-size: 17px;
+  color: var(--accent);
+}
+
+/* Live game */
+.liveGame {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.liveHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.statusLive,
+.statusFinal {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.statusLive {
+  color: var(--warn);
+}
+
+.statusFinal {
+  color: var(--muted);
+}
+
+.liveScoreboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.liveTeam {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.liveName {
+  font-size: 15px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.liveScore {
+  font-size: 56px;
+  line-height: 1.05;
+}
+
+.winner {
+  color: var(--accent);
+}
+
+.periods {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  text-align: center;
+}
+
+.periods th,
+.periods td {
+  padding: 6px 4px;
+  border-top: 1px solid var(--border);
+}
+
+.periods thead th {
+  border-top: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.periods tbody th {
+  max-width: 120px;
+  text-align: left;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topScorers {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+/* Game lists */
+.gameList {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gameRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg);
+  font-size: 14px;
+}
+
+.gameRow > span:nth-last-child(1) {
+  text-align: right;
+}
+
+.gamePrefix {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.gameScore {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* Bracket */
+.bracket {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  align-items: center;
+}
+
+.bracketRound {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.seriesCard {
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.seriesMine {
+  border-color: var(--accent);
+}
+
+.seriesRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.seriesRow + .seriesRow {
+  border-top: 1px solid var(--border-strong);
+}
+
+.seriesWinner {
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.seriesName {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seed {
+  min-width: 22px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+/* Awards */
+.awardsView {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.championCard {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  flex-wrap: wrap;
+  padding: 28px;
+  border-radius: 20px;
+  background: var(--bill);
+  color: var(--bill-light);
+}
+
+.championInfo {
+  flex: 1 1 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.championLabel {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.championName {
+  margin: 0;
+  font-size: clamp(40px, 6vw, 64px);
+  line-height: 1;
+}
+
+.championYou {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.championRoster {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  font-size: 14px;
+}
+
+.championRoster .seed {
+  color: inherit;
+  opacity: 0.75;
+}
+
+.awardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.award {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px;
+  font-size: 14px;
+}
+
+.awardLabel {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--accent);
+}
+
+.warn {
+  color: var(--warn);
+}
+
+.awardValue {
+  font-size: 26px;
+}

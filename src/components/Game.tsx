@@ -2,9 +2,13 @@
 
 import { useState } from 'react';
 import { HUMAN_COACH_ID, useAuction, type GameConfig } from '@/hooks/useAuction';
+import { useI18n } from '@/i18n/I18nProvider';
+import { simulateTournament } from '@/lib/sim/tournament';
+import type { Tournament } from '@/lib/sim/types';
 import { AuctionScreen } from './AuctionScreen';
 import { ResultsScreen } from './ResultsScreen';
 import { SetupScreen } from './SetupScreen';
+import { TournamentScreen } from './tournament/TournamentScreen';
 
 export function Game() {
   const [config, setConfig] = useState<GameConfig | null>(null);
@@ -22,14 +26,39 @@ export function Game() {
     );
   }
 
-  return <LocalAuction key={gameId} config={config} onRestart={() => setConfig(null)} />;
+  return <LocalGame key={gameId} config={config} onRestart={() => setConfig(null)} />;
 }
 
-function LocalAuction({ config, onRestart }: { config: GameConfig; onRestart: () => void }) {
+function LocalGame({ config, onRestart }: { config: GameConfig; onRestart: () => void }) {
+  const { t } = useI18n();
   const { state, now, bid, pass } = useAuction(config);
+  const [tournament, setTournament] = useState<Tournament | null>(null);
 
-  if (state.phase === 'finished') {
-    return <ResultsScreen state={state} humanId={HUMAN_COACH_ID} onRestart={onRestart} />;
+  if (state.phase === 'running') {
+    return <AuctionScreen state={state} now={now} humanId={HUMAN_COACH_ID} onBid={bid} onPass={pass} />;
   }
-  return <AuctionScreen state={state} now={now} humanId={HUMAN_COACH_ID} onBid={bid} onPass={pass} />;
+
+  if (tournament) {
+    return <TournamentScreen tournament={tournament} auction={state} humanId={HUMAN_COACH_ID} onRestart={onRestart} />;
+  }
+
+  const startTournament = () =>
+    setTournament(
+      simulateTournament({
+        coaches: state.coaches,
+        players: state.players,
+        settings: config.tournament,
+        seed: state.rngSeed,
+      }),
+    );
+
+  return (
+    <ResultsScreen
+      state={state}
+      humanId={HUMAN_COACH_ID}
+      onRestart={onRestart}
+      onContinue={startTournament}
+      continueLabel={config.tournament.format === 'playoffsOnly' ? t.results.startPlayoffs : t.results.startSeason}
+    />
+  );
 }

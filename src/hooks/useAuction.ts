@@ -4,12 +4,14 @@ import { useCallback, useEffect, useReducer, useState } from 'react';
 import { PLAYERS } from '@/data/players';
 import { createAuction, passLot, placeBid, tick } from '@/lib/auction/engine';
 import type { AuctionState } from '@/lib/auction/types';
+import type { TournamentSettings } from '@/lib/sim/types';
 
 export interface GameConfig {
   coachName: string;
   coachCount: number;
   benchSize: 0 | 2;
   bidSeconds: number;
+  tournament: TournamentSettings;
 }
 
 export const STARTING_CASH = 20;
