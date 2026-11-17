@@ -1,7 +1,16 @@
 import { botReactionDelay, decideBot } from './bots';
 import { buildPool } from './pool';
 import { createRng, type Rng } from './rng';
-import { canBidOn, createRoster, findSlotFor, isRosterFull, maxBid, minNextBid, topBid } from './rules';
+import {
+  BID_EXTENSION_SECONDS,
+  canBidOn,
+  createRoster,
+  findSlotFor,
+  isRosterFull,
+  maxBid,
+  minNextBid,
+  topBid,
+} from './rules';
 import type { AuctionSettings, AuctionState, Coach, Lot, Player } from './types';
 
 export interface CoachSeed {
@@ -115,10 +124,11 @@ function applyBid(state: AuctionState, coachId: string, amount: number, now: num
   if (!isValid) return state;
 
   const bids = [...lot.bids, { coachId, amount, at: now }];
+  // The clock never goes back to full time: a late bid only buys a few seconds.
   const updatedLot: Lot = {
     ...lot,
     bids,
-    deadline: now + state.settings.bidSeconds * 1000,
+    deadline: Math.max(lot.deadline, now + BID_EXTENSION_SECONDS * 1000),
   };
   // Anyone who can no longer afford the next bid is out automatically.
   updatedLot.passed = state.coaches
@@ -156,7 +166,7 @@ function planBots(state: AuctionState, now: number, rng: Rng): Record<string, nu
   for (const coach of state.coaches) {
     if (!coach.isBot) continue;
     const waiting = !lot || lot.passed.includes(coach.id) || coach.id === topCoachId;
-    plans[coach.id] = waiting ? Infinity : now + botReactionDelay(state.settings.bidSeconds, rng);
+    plans[coach.id] = waiting || !lot ? Infinity : now + botReactionDelay(lot.deadline - now, rng);
   }
   return plans;
 }

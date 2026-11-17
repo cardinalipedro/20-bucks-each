@@ -14,6 +14,22 @@
   --radius: 16px;
   --font-display: 'Anton', Impact, sans-serif;
   --font-body: 'Archivo', system-ui, sans-serif;
+  color-scheme: dark;
+}
+
+/* Light theme: white base, same green identity (darker shade so text stays readable). */
+:root[data-theme='light'] {
+  --bg: #ffffff;
+  --surface: #f3f8f5;
+  --border: #dce8e1;
+  --border-strong: #c3d6cb;
+  --text: #0e1f16;
+  --text-soft: #3d5547;
+  --muted: #5d7568;
+  --accent: #0f7f45;
+  --accent-ink: #ffffff;
+  --warn: #a15c07;
+  color-scheme: light;
 }
 
 *,

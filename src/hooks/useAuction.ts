@@ -39,7 +39,8 @@ function init(config: GameConfig): AuctionState {
     players: PLAYERS,
     coaches: [
       { name: config.coachName, isBot: false },
-      ...Array.from({ length: config.coachCount - 1 }, (_, i) => ({ name: `Veado Bot ${i + 1}`, isBot: true })),
+      // Bot names are shown in the current language by `coachLabel`.
+      ...Array.from({ length: config.coachCount - 1 }, (_, i) => ({ name: `Bot ${i + 1}`, isBot: true })),
     ],
     seed: Math.floor(Math.random() * 2 ** 31),
     now: Date.now(),

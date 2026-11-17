@@ -59,7 +59,8 @@ export function decideBot(bot: Coach, state: AuctionState, rng: Rng): BotDecisio
   return { type: 'bid', amount: next + jump };
 }
 
-/** Delay before a bot reacts, so bids feel human. */
-export function botReactionDelay(bidSeconds: number, rng: Rng): number {
-  return rng.between(700, bidSeconds * 1000 * 0.75);
+/** Delay before a bot reacts, so bids feel human but still land before the clock runs out. */
+export function botReactionDelay(msLeft: number, rng: Rng): number {
+  const earliest = Math.min(600, msLeft * 0.3);
+  return rng.between(earliest, msLeft * 0.85);
 }

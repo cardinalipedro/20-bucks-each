@@ -118,6 +118,18 @@ describe('auction engine', () => {
     }
   });
 
+  it('never resets the clock, a late bid only extends it to 3 seconds', () => {
+    const state = newGame(2, SETTINGS, 2);
+    const [a, b] = state.coaches;
+    assert.equal(state.lot!.deadline, 10_000);
+
+    const early = placeBid(state, a.id, 1, 1_000);
+    assert.equal(early.lot!.deadline, 10_000);
+
+    const late = placeBid(early, b.id, 2, 8_500);
+    assert.equal(late.lot!.deadline, 11_500);
+  });
+
   it('is deterministic for the same seed', () => {
     const first = runToEnd(newGame(6, SETTINGS, 0, 7), 0);
     const second = runToEnd(newGame(6, SETTINGS, 0, 7), 0);
